@@ -61,20 +61,19 @@ TEST_CASE("thread test with new name/id checks", "[thrd][thrd_with_create_attrs]
 	thrd_t t1 = {};
 
 	ztdc_thrd_attr_c16name name_attr = { // format
-		.kind = ztdc_thrd_attr_kind_name,
-		.name = u"meow?!\0\0\0"
+		ztdc_thrd_attr_kind_name, u"meow?!\0\0\0"
 	};
 	ztdc_thrd_attr_stack_size stack_size_attr = {
-		.kind = ztdc_thrd_attr_kind_stack_size,
-		.size = 1'024,
+		ztdc_thrd_attr_kind_stack_size,
+		1'024,
 	};
 	struct ztdc_thrd_attr_priority {
 		ztdc_thrd_attr_kind kind;
 		int priority;
 	} priority_attr = {
 		// some custom attribute or whatever
-		.kind     = ztdc_thrd_attr_kind_impl_def_priority,
-		.priority = INT_MAX,
+		ztdc_thrd_attr_kind_impl_def_priority,
+		INT_MAX,
 	};
 
 	ztdc_thrd_attr_kind* attrs[] = {
