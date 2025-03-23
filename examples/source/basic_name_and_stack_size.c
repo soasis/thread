@@ -35,7 +35,7 @@
 
 inline static int thrd_main(void* arg) {
 	int t_id           = *(int*)arg;
-	char name_buf[128] = {};
+	char name_buf[128] = { 0 };
 	ztdc_thrd_get_c8name(thrd_current(), sizeof(name_buf), (unsigned char*)name_buf);
 	const char* t_name = name_buf;
 	printf("thread id: %d\n thread name: %s\n\n", t_id, t_name);
