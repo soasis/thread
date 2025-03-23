@@ -435,8 +435,7 @@ int ztdc_thrd_get_mcname(thrd_t __thr, size_t __buffer_size, char* __buffer) {
 		__buffer[0] = 0;
 		return thrd_success;
 	}
-	const size_t __old_buffer_size = __buffer_size;
-	__buffer_size - 1;
+	__buffer_size -= 1;
 	cnc_mcerr __conv_res
 	     = cnc_c16sntomcsn(&__buffer_size, &__buffer, &__impl_wide_str_size, (const ztd_char16_t**)&__impl_wide_str);
 	LocalFree(__impl_wide_str);
@@ -506,7 +505,7 @@ int ztdc_thrd_get_c8name(thrd_t __thr, size_t __buffer_size, ztd_char8_t* __buff
 		__buffer[0] = 0;
 		return thrd_success;
 	}
-	__buffer_size - 1;
+	__buffer_size -= 1;
 	cnc_mcerr __conv_res
 	     = cnc_c16sntoc8sn(&__buffer_size, &__buffer, &__impl_wide_str_size, (const ztd_char16_t**)&__impl_wide_str);
 	LocalFree(__impl_wide_str);
