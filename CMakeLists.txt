@@ -240,8 +240,7 @@ if(ZTD_THREAD_BENCHMARKS)
 endif()
 
 if(ZTD_THREAD_EXAMPLES)
-	# none yet
-	#add_subdirectory(examples)
+	add_subdirectory(examples)
 endif()
 
 # For quick debugging and development only: don't peek! 🙈

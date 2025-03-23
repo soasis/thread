@@ -33,10 +33,10 @@
 
 #include <stdio.h>
 
-extern "C" inline int thrd_main(void* arg) {
+inline static int thrd_main(void* arg) {
 	int t_id           = *(int*)arg;
 	char name_buf[128] = {};
-	ztdc_thrd_get_name(thrd_current(), sizeof(name_buf), (unsigned char*)name_buf);
+	ztdc_thrd_get_c8name(thrd_current(), sizeof(name_buf), (unsigned char*)name_buf);
 	const char* t_name = name_buf;
 	printf("thread id: %d\n", t_id);
 	printf("thread name: %s\n", t_name);
@@ -48,9 +48,9 @@ int main() {
 	thrd_t t0 = {};
 	thrd_t t1 = {};
 
-	ztdc_thrd_attr_name name_attr = { // format
-		.kind = ztdc_thrd_attr_kind_name,
-		.name = "meow?!"
+	ztdc_thrd_attr_c32name name_attr = { // format
+		.kind = ztdc_thrd_attr_kind_c32name,
+		.name = U"meow?!"
 	};
 	ztdc_thrd_attr_stack_size stack_size_attr = {
 		.kind = ztdc_thrd_attr_kind_stack_size,
@@ -73,7 +73,7 @@ int main() {
 
 	int t0_id = 0;
 	ztdc_thrd_create_attrs(&t0, thrd_main, &t0_id, ztdc_c_array_size(attrs), attrs);
-	name_attr.name = "bark?!?!";
+	name_attr.name = U"bark?!?!";
 	int t1_id      = 1;
 	ztdc_thrd_create_attrs(&t1, thrd_main, &t1_id, ztdc_c_array_size(attrs), attrs);
 
