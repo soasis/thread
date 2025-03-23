@@ -48,8 +48,6 @@ foreach (example_source_name ${ztd.thread.examples.sources})
 		${--warn-all}
 		${--warn-extra}
 		${--warn-errors}
-		${--allow-alignas-extra-padding}
-		${--allow-stringop-overflow} ${--allow-stringop-overread}
 	)
 	
 	target_link_libraries(${example_target}

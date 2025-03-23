@@ -38,15 +38,13 @@ inline static int thrd_main(void* arg) {
 	char name_buf[128] = {};
 	ztdc_thrd_get_c8name(thrd_current(), sizeof(name_buf), (unsigned char*)name_buf);
 	const char* t_name = name_buf;
-	printf("thread id: %d\n", t_id);
-	printf("thread name: %s\n", t_name);
-	printf("\n");
+	printf("thread id: %d\n thread name: %s\n\n", t_id, t_name);
 	thrd_exit(t_id);
 }
 
 int main() {
-	thrd_t t0 = {};
-	thrd_t t1 = {};
+	thrd_t t0 = { 0 };
+	thrd_t t1 = { 0 };
 
 	ztdc_thrd_attr_c32name name_attr = { // format
 		.kind = ztdc_thrd_attr_kind_c32name,
@@ -54,7 +52,7 @@ int main() {
 	};
 	ztdc_thrd_attr_stack_size stack_size_attr = {
 		.kind = ztdc_thrd_attr_kind_stack_size,
-		.size = 1'024,
+		.size = 1024,
 	};
 	struct ztdc_thrd_attr_priority {
 		ztdc_thrd_attr_kind kind;
