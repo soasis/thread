@@ -29,6 +29,8 @@
 // ============================================================================ //
 
 #include <ztd/thread.h>
+#include <ztd/idk/size.h>
+#include <ztd/idk/assert.h>
 
 #include <stdio.h>
 
@@ -69,14 +71,16 @@ int main() {
 	};
 
 	int t0_id = 0;
-	ztdc_thrd_create_attrs(&t0, thrd_main, &t0_id, 3, attrs);
+	ztdc_thrd_create_attrs(&t0, thrd_main, &t0_id, ztdc_c_array_size(attrs), attrs);
 	name_attr.name = U"bark?!?!";
 	int t1_id      = 1;
-	ztdc_thrd_create_attrs(&t1, thrd_main, &t1_id, 3, attrs);
+	ztdc_thrd_create_attrs(&t1, thrd_main, &t1_id, ztdc_c_array_size(attrs), attrs);
 
 	int res0 = 0;
 	int res1 = 0;
 	thrd_join(t0, &res0);
 	thrd_join(t1, &res1);
-	return res0 + res1;
+	ZTD_ASSERT(res0 == 0);
+	ZTD_ASSERT(res1 == 1);
+	return 0;
 }
