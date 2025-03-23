@@ -474,14 +474,14 @@ ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
 int ztdc_thrd_get_mcname(thrd_t __thr, size_t __buffer_size, char* __buffer) {
 	ztd_char8_t __pivot[ZTD_USE(ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE)];
-	const size_t __pivot_size = ztdc_c_array_size(__pivot);
-	int __res                 = pthread_getname_np((pthread_t)__thr, (char*)__pivot, __pivot_size);
+	const size_t __pivot_size      = ztdc_c_array_size(__pivot);
+	const ztd_char8_t* __pivot_ptr = (const ztd_char8_t*)&__pivot[0];
+	int __res                      = pthread_getname_np((pthread_t)__thr, (char*)__pivot, __pivot_size);
 	if (__res != 0) {
 		return __ztdc_pthread_to_thread_error(__res);
 	}
 	size_t __real_pivot_size = ztdc_c_string_ptr_size_limit(__pivot_size, __pivot);
-	cnc_mcerr __conv_res
-	     = cnc_c8sntomcsn(&__buffer_size, &__buffer, &__real_pivot_size, (const ztd_char8_t**)&__pivot);
+	cnc_mcerr __conv_res     = cnc_c8sntomcsn(&__buffer_size, &__buffer, &__real_pivot_size, &__pivot_ptr);
 	if (__conv_res == cnc_mcerr_ok) {
 		return thrd_success;
 	}
@@ -495,14 +495,14 @@ ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
 int ztdc_thrd_get_mwcname(thrd_t __thr, size_t __buffer_size, ztd_wchar_t* __buffer) {
 	ztd_char8_t __pivot[ZTD_USE(ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE)];
-	const size_t __pivot_size = ztdc_c_array_size(__pivot);
-	int __res                 = pthread_getname_np((pthread_t)__thr, (char*)__pivot, __pivot_size);
+	const size_t __pivot_size      = ztdc_c_array_size(__pivot);
+	const ztd_char8_t* __pivot_ptr = (const ztd_char8_t*)&__pivot[0];
+	int __res                      = pthread_getname_np((pthread_t)__thr, (char*)__pivot, __pivot_size);
 	if (__res != 0) {
 		return __ztdc_pthread_to_thread_error(__res);
 	}
 	size_t __real_pivot_size = ztdc_c_string_ptr_size_limit(__pivot_size, __pivot);
-	cnc_mcerr __conv_res
-	     = cnc_c8sntomwcsn(&__buffer_size, &__buffer, &__real_pivot_size, (const ztd_char8_t**)&__pivot);
+	cnc_mcerr __conv_res     = cnc_c8sntomwcsn(&__buffer_size, &__buffer, &__real_pivot_size, &__pivot_ptr);
 	if (__conv_res == cnc_mcerr_ok) {
 		return thrd_success;
 	}

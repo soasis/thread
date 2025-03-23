@@ -39,131 +39,163 @@
 #include <type_traits>
 
 TEST_CASE("encoded thread name check", "[thrd][thrd_with_create_attrs][encoded-name]") {
-#define MAKE_TEST_BRACKET(prefix, given, expected, expected_prefix)                                                                           \
-	using given_char_t    = std::remove_cv_t<std::remove_reference_t<decltype(given[0])>>;                                                   \
-	using expected_char_t = std::remove_cv_t<std::remove_reference_t<decltype(expected[0])>>;                                                \
-	static constexpr const given_char_t thread_name[]             = given;                                                                   \
-	static constexpr const expected_char_t expected_thread_name[] = expected;                                                                \
-	const constexpr auto thrd_main                                = [](void* arg) -> int {                                                   \
-          int t_id                      = *(int*)arg;                                                          \
-          expected_char_t name_buf[128] = {};                                                                  \
-          int name_get_result                                                                                  \
-               = ztdc_thrd_get_##expected_prefix##name(thrd_current(), ztdc_c_array_size(name_buf), name_buf); \
-          REQUIRE(name_get_result == thrd_success);                                                            \
-          const expected_char_t* name = name_buf;                                                              \
-          int expected_name_result                                                                             \
-               = std::memcmp(name, &expected_thread_name[0], ztdc_c_array_size(expected_thread_name));         \
-          REQUIRE(expected_name_result == 0);                                                                  \
-          thrd_exit(t_id);                                                                                     \
-	};                                                                                                                                       \
-                                                                                                                                              \
-	thrd_t t0 = {};                                                                                                                          \
-                                                                                                                                              \
-	ztdc_thrd_attr_##prefix##name name_attr = {                                                                                              \
-		/* format */                                                                                                                        \
-		ztdc_thrd_attr_kind_##prefix##name,                                                                                                 \
-		thread_name,                                                                                                                        \
-	};                                                                                                                                       \
-	struct ztdc_thrd_attr_priority {                                                                                                         \
-		ztdc_thrd_attr_kind kind;                                                                                                           \
-		int priority;                                                                                                                       \
-	} priority_attr = {                                                                                                                      \
-		ztdc_thrd_attr_kind_impl_def_priority,                                                                                              \
-		INT_MAX,                                                                                                                            \
-	};                                                                                                                                       \
-                                                                                                                                              \
-	ztdc_thrd_attr_kind* attrs[] = {                                                                                                         \
-		&priority_attr.kind,                                                                                                                \
-		&name_attr.kind,                                                                                                                    \
-	};                                                                                                                                       \
-                                                                                                                                              \
-	int t0_id = 0xF3;                                                                                                                        \
-	ztdc_thrd_create_attrs(&t0, thrd_main, &t0_id, ztdc_c_array_size(attrs), attrs);                                                         \
-	int res0 = 0;                                                                                                                            \
-	thrd_join(t0, &res0);                                                                                                                    \
+#define MAKE_TEST_BRACKET(given_prefix, given, given_type, expected_prefix, expected, expected_type)                                  \
+	using given_char_t    = std::remove_cv_t<std::remove_reference_t<decltype(given[0])>>;                                           \
+	using expected_char_t = std::remove_cv_t<std::remove_reference_t<decltype(expected[0])>>;                                        \
+	static constexpr const given_char_t thread_name[]             = given;                                                           \
+	static constexpr const expected_char_t expected_thread_name[] = expected;                                                        \
+	const constexpr auto thrd_main                                = [](void* arg) -> int {                                           \
+          int t_id                      = *(int*)arg;                                                  \
+          expected_char_t name_buf[128] = {};                                                          \
+          int name_get_result           = ztdc_thrd_get_##expected_prefix##name(                       \
+               thrd_current(), ztdc_c_array_size(name_buf), (expected_type*)name_buf);       \
+          REQUIRE(name_get_result == thrd_success);                                                    \
+          const expected_char_t* name = name_buf;                                                      \
+          int expected_name_result                                                                     \
+               = std::memcmp(name, &expected_thread_name[0], ztdc_c_array_size(expected_thread_name)); \
+          REQUIRE(expected_name_result == 0);                                                          \
+          thrd_exit(t_id);                                                                             \
+	};                                                                                                                               \
+                                                                                                                                      \
+	thrd_t t0 = {};                                                                                                                  \
+                                                                                                                                      \
+	ztdc_thrd_attr_##given_prefix##name name_attr = {                                                                                \
+		/* format */                                                                                                                \
+		ztdc_thrd_attr_kind_##given_prefix##name,                                                                                   \
+		(given_type*)thread_name,                                                                                                   \
+	};                                                                                                                               \
+	struct ztdc_thrd_attr_priority {                                                                                                 \
+		ztdc_thrd_attr_kind kind;                                                                                                   \
+		int priority;                                                                                                               \
+	} priority_attr = {                                                                                                              \
+		ztdc_thrd_attr_kind_impl_def_priority,                                                                                      \
+		INT_MAX,                                                                                                                    \
+	};                                                                                                                               \
+                                                                                                                                      \
+	ztdc_thrd_attr_kind* attrs[] = {                                                                                                 \
+		&priority_attr.kind,                                                                                                        \
+		&name_attr.kind,                                                                                                            \
+	};                                                                                                                               \
+                                                                                                                                      \
+	int t0_id = 0xF3;                                                                                                                \
+	ztdc_thrd_create_attrs(&t0, thrd_main, &t0_id, ztdc_c_array_size(attrs), attrs);                                                 \
+	int res0 = 0;                                                                                                                    \
+	thrd_join(t0, &res0);                                                                                                            \
 	REQUIRE(res0 == 0xF3)
 
 	SECTION("c8/u8/ascii") {
-		MAKE_TEST_BRACKET(c8, u8"meow?!", u8"meow?!", c8);
+		MAKE_TEST_BRACKET(c8, u8"meow?!", ztd_char8_t, c8, u8"meow?!", ztd_char8_t);
 	}
 	SECTION("c16/u/ascii") {
-		MAKE_TEST_BRACKET(c16, u"meow?!", u8"meow?!", c8);
+		MAKE_TEST_BRACKET(c16, u"meow?!", ztd_char16_t, c8, u8"meow?!", ztd_char8_t);
 	}
 	SECTION("c32/U/ascii") {
-		MAKE_TEST_BRACKET(c32, U"meow?!", u8"meow?!", c8);
+		MAKE_TEST_BRACKET(c32, U"meow?!", ztd_char32_t, c8, u8"meow?!", ztd_char8_t);
 	}
 	SECTION("mc//ascii") {
-		MAKE_TEST_BRACKET(mc, "meow?!", u8"meow?!", c8);
+		MAKE_TEST_BRACKET(mc, "meow?!", ztd_char_t, c8, u8"meow?!", ztd_char8_t);
 	}
 	SECTION("mwc/L/ascii") {
-		MAKE_TEST_BRACKET(mwc, L"meow?!", u8"meow?!", c8);
+		MAKE_TEST_BRACKET(mwc, L"meow?!", ztd_wchar_t, c8, u8"meow?!", ztd_char8_t);
 	}
 	SECTION("c8/u8/unicode") {
-		MAKE_TEST_BRACKET(
-		     c8, u8"\u300E\U0001F49A yay! \U0001F49A\u300F", u8"\u300E\U0001F49A yay! \U0001F49A\u300F", c8);
+		MAKE_TEST_BRACKET(c8, u8"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char8_t, c8,
+		     u8"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char8_t);
 	}
 	SECTION("c16/u/unicode") {
-		MAKE_TEST_BRACKET(
-		     c16, u"\u300E\U0001F49A yay! \U0001F49A\u300F", u8"\u300E\U0001F49A yay! \U0001F49A\u300F", c8);
+		MAKE_TEST_BRACKET(c16, u"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char16_t, c8,
+		     u8"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char8_t);
 	}
 	SECTION("c32/U/unicode") {
-		MAKE_TEST_BRACKET(
-		     c32, U"\u300E\U0001F49A yay! \U0001F49A\u300F", u8"\u300E\U0001F49A yay! \U0001F49A\u300F", c8);
+		MAKE_TEST_BRACKET(c32, U"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char32_t, c8,
+		     u8"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char8_t);
 	}
 
 	SECTION("c8/u8/ascii") {
-		MAKE_TEST_BRACKET(c8, u8"meow?!", u"meow?!", c16);
+		MAKE_TEST_BRACKET(c8, u8"meow?!", ztd_char8_t, c16, u"meow?!", ztd_char16_t);
 	}
 	SECTION("c16/u/ascii") {
-		MAKE_TEST_BRACKET(c16, u"meow?!", u"meow?!", c16);
+		MAKE_TEST_BRACKET(c16, u"meow?!", ztd_char16_t, c16, u"meow?!", ztd_char16_t);
 	}
 	SECTION("c32/U/ascii") {
-		MAKE_TEST_BRACKET(c32, U"meow?!", u"meow?!", c16);
+		MAKE_TEST_BRACKET(c32, U"meow?!", ztd_char32_t, c16, u"meow?!", ztd_char16_t);
 	}
 	SECTION("mc//ascii") {
-		MAKE_TEST_BRACKET(mc, "meow?!", u"meow?!", c16);
+		MAKE_TEST_BRACKET(mc, "meow?!", ztd_char_t, c16, u"meow?!", ztd_char16_t);
 	}
 	SECTION("mwc/L/ascii") {
-		MAKE_TEST_BRACKET(mwc, L"meow?!", u"meow?!", c16);
+		MAKE_TEST_BRACKET(mwc, L"meow?!", ztd_wchar_t, c16, u"meow?!", ztd_char16_t);
 	}
 	SECTION("c8/u8/unicode") {
-		MAKE_TEST_BRACKET(
-		     c8, u8"\u300E\U0001F49A yay! \U0001F49A\u300F", u"\u300E\U0001F49A yay! \U0001F49A\u300F", c16);
+		MAKE_TEST_BRACKET(c8, u8"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char8_t, c16,
+		     u"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char16_t);
 	}
 	SECTION("c16/u/unicode") {
-		MAKE_TEST_BRACKET(
-		     c16, u"\u300E\U0001F49A yay! \U0001F49A\u300F", u"\u300E\U0001F49A yay! \U0001F49A\u300F", c16);
+		MAKE_TEST_BRACKET(c16, u"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char16_t, c16,
+		     u"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char16_t);
 	}
 	SECTION("c32/U/unicode") {
-		MAKE_TEST_BRACKET(
-		     c32, U"\u300E\U0001F49A yay! \U0001F49A\u300F", u"\u300E\U0001F49A yay! \U0001F49A\u300F", c16);
+		MAKE_TEST_BRACKET(c32, U"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char32_t, c16,
+		     u"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char16_t);
 	}
 
 	SECTION("c8/u8/ascii") {
-		MAKE_TEST_BRACKET(c8, u8"meow?!", U"meow?!", c32);
+		MAKE_TEST_BRACKET(c8, u8"meow?!", ztd_char8_t, c32, U"meow?!", ztd_char32_t);
 	}
 	SECTION("c16/u/ascii") {
-		MAKE_TEST_BRACKET(c16, u"meow?!", U"meow?!", c32);
+		MAKE_TEST_BRACKET(c16, u"meow?!", ztd_char16_t, c32, U"meow?!", ztd_char32_t);
 	}
 	SECTION("c32/U/ascii") {
-		MAKE_TEST_BRACKET(c32, U"meow?!", U"meow?!", c32);
+		MAKE_TEST_BRACKET(c32, U"meow?!", ztd_char32_t, c32, U"meow?!", ztd_char32_t);
 	}
 	SECTION("mc//ascii") {
-		MAKE_TEST_BRACKET(mc, "meow?!", U"meow?!", c32);
+		MAKE_TEST_BRACKET(mc, "meow?!", ztd_char_t, c32, U"meow?!", ztd_char32_t);
 	}
 	SECTION("mwc/L/ascii") {
-		MAKE_TEST_BRACKET(mwc, L"meow?!", U"meow?!", c32);
+		MAKE_TEST_BRACKET(mwc, L"meow?!", ztd_wchar_t, c32, U"meow?!", ztd_char32_t);
 	}
 	SECTION("c8/u8/unicode") {
-		MAKE_TEST_BRACKET(
-		     c8, u8"\u300E\U0001F49A yay! \U0001F49A\u300F", U"\u300E\U0001F49A yay! \U0001F49A\u300F", c32);
+		MAKE_TEST_BRACKET(c8, u8"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char8_t, c32,
+		     U"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char32_t);
 	}
 	SECTION("c16/u/unicode") {
-		MAKE_TEST_BRACKET(
-		     c16, u"\u300E\U0001F49A yay! \U0001F49A\u300F", U"\u300E\U0001F49A yay! \U0001F49A\u300F", c32);
+		MAKE_TEST_BRACKET(c16, u"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char16_t, c32,
+		     U"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char32_t);
 	}
 	SECTION("c32/U/unicode") {
-		MAKE_TEST_BRACKET(
-		     c32, U"\u300E\U0001F49A yay! \U0001F49A\u300F", U"\u300E\U0001F49A yay! \U0001F49A\u300F", c32);
+		MAKE_TEST_BRACKET(c32, U"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char32_t, c32,
+		     U"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char32_t);
+	}
+
+	SECTION("c8/u8/ascii") {
+		MAKE_TEST_BRACKET(c8, u8"meow?!", ztd_char8_t, mc, "meow?!", ztd_char_t);
+	}
+	SECTION("c16/u/ascii") {
+		MAKE_TEST_BRACKET(c16, u"meow?!", ztd_char16_t, mc, "meow?!", ztd_char_t);
+	}
+	SECTION("c32/U/ascii") {
+		MAKE_TEST_BRACKET(c32, U"meow?!", ztd_char32_t, mc, "meow?!", ztd_char_t);
+	}
+	SECTION("mc//ascii") {
+		MAKE_TEST_BRACKET(mc, "meow?!", ztd_char_t, mc, "meow?!", ztd_char_t);
+	}
+	SECTION("mwc/L/ascii") {
+		MAKE_TEST_BRACKET(mwc, L"meow?!", ztd_wchar_t, mc, "meow?!", ztd_char_t);
+	}
+
+	SECTION("c8/u8/ascii") {
+		MAKE_TEST_BRACKET(c8, u8"meow?!", ztd_char8_t, mwc, L"meow?!", ztd_wchar_t);
+	}
+	SECTION("c16/u/ascii") {
+		MAKE_TEST_BRACKET(c16, u"meow?!", ztd_char16_t, mwc, L"meow?!", ztd_wchar_t);
+	}
+	SECTION("c32/U/ascii") {
+		MAKE_TEST_BRACKET(c32, U"meow?!", ztd_char32_t, mwc, L"meow?!", ztd_wchar_t);
+	}
+	SECTION("mc//ascii") {
+		MAKE_TEST_BRACKET(mc, "meow?!", ztd_char_t, mwc, L"meow?!", ztd_wchar_t);
+	}
+	SECTION("mwc/L/ascii") {
+		MAKE_TEST_BRACKET(mwc, L"meow?!", ztd_wchar_t, mwc, L"meow?!", ztd_wchar_t);
 	}
 }

@@ -35,6 +35,12 @@
 
 #include <ztd/thread/version.h>
 
+#define _GNU_SOURCE
+#include <pthread.h>
+#if ZTD_IS_ON(ZTD_HEADER_PTHREAD_NP_H)
+#include <pthread_np.h>
+#endif
+
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_INTERNAL_LINKAGE)
 int __ztdc_pthread_to_thread_error(int __code);
