@@ -120,6 +120,26 @@ int ztdc_thrd_create_attrs(
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
-int ztdc_thrd_get_name(thrd_t __thr, size_t __buffer_size, unsigned char* __buffer);
+int ztdc_thrd_get_mcname(thrd_t __thr, size_t __buffer_size, char* __buffer);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_get_mwcname(thrd_t __thr, size_t __buffer_size, ztd_wchar_t* __buffer);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_get_c8name(thrd_t __thr, size_t __buffer_size, ztd_char8_t* __buffer);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_get_c16name(thrd_t __thr, size_t __buffer_size, ztd_char16_t* __buffer);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_get_c32name(thrd_t __thr, size_t __buffer_size, ztd_char32_t* __buffer);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_get_name(thrd_t __thr, size_t __buffer_size, void* __buffer);
 
 #endif

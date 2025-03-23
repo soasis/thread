@@ -38,12 +38,7 @@
 #include <ztd/idk/null.h>
 #include <ztd/idk/size.h>
 #include <ztd/idk/detail/threads.pthreads.implementation.h>
-
-#define _GNU_SOURCE
-#include <pthread.h>
-#if ZTD_IS_ON(ZTD_HEADER_PTHREAD_NP_H)
-#include <pthread_np.h>
-#endif
+#include <ztd/cuneicode.h>
 
 #if ZTD_IS_ON(ZTD_HEADER_SCHED_H)
 #include <sched.h>
@@ -167,28 +162,110 @@ int thrd_sleep(const struct timespec* __duration, struct timespec* __remaining) 
 
 #endif
 
+typedef enum __ztdc_encoding_name {
+	__ztdc_encoding_name_none,
+	__ztdc_encoding_name_mc,
+	__ztdc_encoding_name_mwc,
+	__ztdc_encoding_name_c8,
+	__ztdc_encoding_name_c16,
+	__ztdc_encoding_name_c32,
+} __ztdc_encoding_name;
+
 typedef struct __ztdc_pthread_trampoline_t {
 	thrd_start_t __func;
 	void* __func_arg;
 #if ZTD_IS_ON(ZTD_THREAD_THREADS_NAME_SET_INSIDE)
 	bool __name_set;
-	char __name[2048];
+	char __name[ZTD_USE(ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE)];
 #endif
 } __ztdc_pthread_trampoline_t;
 
 inline static void __ztdc_pthread_prepare_name_trampoline(pthread_attr_t* __impl_attrs,
-     __ztdc_pthread_trampoline_t* __trampoline_userdata, size_t __name_size, const void* __name) {
+     __ztdc_pthread_trampoline_t* __trampoline_userdata, size_t __name_size, const void* __name,
+     __ztdc_encoding_name __name_encoding) {
 #if ZTD_IS_ON(ZTD_THREAD_THREADS_NAME_SET_INSIDE)
 	(void)__impl_attrs;
-	const size_t __trampoline_name_size = sizeof(__trampoline_userdata->__name) - 1;
-	const size_t __copy_size            = __trampoline_name_size < __name_size ? __trampoline_name_size : __name_size;
-	memcpy(__trampoline_userdata->__name, __name, __copy_size);
-	__trampoline_userdata->__name[__copy_size] = '\0'; // ensure the necessary null termination
-	__trampoline_userdata->__name_set          = true;
+	switch (__name_encoding) {
+	case __ztdc_encoding_name_c32: {
+		const ztd_char32_t* __name_ptr = (const ztd_char32_t*)__name;
+		char* __trampoline_name_ptr    = __trampoline_userdata->__name;
+		size_t __trampoline_name_size  = sizeof(__trampoline_userdata->__name) - 1;
+		cnc_c32sntomcsn_utf8(&__trampoline_name_size, &__trampoline_name_ptr, &__name_size, &__name_ptr);
+		__trampoline_name_ptr[0] = '\0';
+	} break;
+	case __ztdc_encoding_name_c16: {
+		const ztd_char16_t* __name_ptr = (const ztd_char16_t*)__name;
+		char* __trampoline_name_ptr    = __trampoline_userdata->__name;
+		size_t __trampoline_name_size  = sizeof(__trampoline_userdata->__name) - 1;
+		cnc_c16sntomcsn_utf8(&__trampoline_name_size, &__trampoline_name_ptr, &__name_size, &__name_ptr);
+		__trampoline_name_ptr[0] = '\0';
+	} break;
+	case __ztdc_encoding_name_mc: {
+		const ztd_char_t* __name_ptr  = (const ztd_char_t*)__name;
+		char* __trampoline_name_ptr   = __trampoline_userdata->__name;
+		size_t __trampoline_name_size = sizeof(__trampoline_userdata->__name) - 1;
+		cnc_mcsntomcsn_exec_utf8(&__trampoline_name_size, &__trampoline_name_ptr, &__name_size, &__name_ptr);
+		__trampoline_name_ptr[0] = '\0';
+	} break;
+	case __ztdc_encoding_name_mwc: {
+		const ztd_wchar_t* __name_ptr = (const ztd_wchar_t*)__name;
+		char* __trampoline_name_ptr   = __trampoline_userdata->__name;
+		size_t __trampoline_name_size = sizeof(__trampoline_userdata->__name) - 1;
+		cnc_mwcsntomcsn_wide_exec_utf8(&__trampoline_name_size, &__trampoline_name_ptr, &__name_size, &__name_ptr);
+		__trampoline_name_ptr[0] = '\0';
+	} break;
+	case __ztdc_encoding_name_c8:
+	case __ztdc_encoding_name_none:
+	default: {
+		const size_t __trampoline_name_size = sizeof(__trampoline_userdata->__name) - 1;
+		const size_t __copy_size = __trampoline_name_size < __name_size ? __trampoline_name_size : __name_size;
+		memcpy(__trampoline_userdata->__name, __name, __copy_size);
+		__trampoline_userdata->__name[__copy_size] = '\0'; // ensure the necessary null termination
+	} break;
+	}
 #else
 	// we're gonna be using the IBM stuff here, then
-	pthread_attr_setname_np(__impl_attrs, (const char*)__name);
+	switch (__name_encoding) {
+	case __ztdc_encoding_name_c32: {
+		char __pivot[ZTD_USE(ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE)];
+		char* __pivot_ptr   = __pivot;
+		size_t __pivot_size = sizeof(__pivot) - 1;
+		cnc_c32sntomcsn_utf8(&__pivot_size, &__pivot_ptr, __name_size, (const ztd_char32_t**)&__name);
+		__pivot_ptr[0] = '\0';
+		pthread_attr_setname_np(__impl_attrs, __pivot);
+	} break;
+	case __ztdc_encoding_name_c16: {
+		char __pivot[ZTD_USE(ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE)];
+		char* __pivot_ptr   = __pivot;
+		size_t __pivot_size = sizeof(__pivot) - 1;
+		cnc_c16sntomcsn_utf8(&__pivot_size, &__pivot_ptr, __name_size, (const ztd_char16_t**)&__name);
+		__pivot_ptr[0] = '\0';
+		pthread_attr_setname_np(__impl_attrs, __pivot);
+	} break;
+	case __ztdc_encoding_name_mc: {
+		char __pivot[ZTD_USE(ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE)];
+		char* __pivot_ptr   = __pivot;
+		size_t __pivot_size = sizeof(__pivot) - 1;
+		cnc_mcsntomcsn_exec_utf8(&__pivot_size, &__pivot_ptr, __name_size, (const ztd_char_t**)&__name);
+		__pivot_ptr[0] = '\0';
+		pthread_attr_setname_np(__impl_attrs, __pivot);
+	} break;
+	case __ztdc_encoding_name_mwc: {
+		char __pivot[ZTD_USE(ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE)];
+		char* __pivot_ptr   = __pivot;
+		size_t __pivot_size = sizeof(__pivot) - 1;
+		cnc_mwcsntomcsn_wide_exec_utf8(&__pivot_size, &__pivot_ptr, __name_size, (const ztd_wchar_t_t**)&__name);
+		__pivot_ptr[0] = '\0';
+		pthread_attr_setname_np(__impl_attrs, __pivot);
+	} break;
+	case __ztdc_encoding_name_c8:
+	case __ztdc_encoding_name_none:
+	default: {
+		pthread_attr_setname_np(__impl_attrs, (const char*)__name);
+	} break;
+	}
 #endif
+	__trampoline_userdata->__name_set = true;
 }
 
 inline static void* __ztdc_pthread_trampoline(void* __userdata) {
@@ -261,61 +338,56 @@ int ztdc_thrd_create_attrs(
 			ztdc_thrd_attr_name* __attr = (ztdc_thrd_attr_name*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = ztdc_c_string_ptr_size((const char*)__attr->name);
-				__ztdc_pthread_prepare_name_trampoline(
-				     &__impl_attrs, __trampoline_userdata, __name_size, (const char*)__attr->name);
+				__ztdc_pthread_prepare_name_trampoline(&__impl_attrs, __trampoline_userdata, __name_size,
+				     (const char*)__attr->name, __ztdc_encoding_name_none);
 			}
 		} break;
 		case ztdc_thrd_attr_kind_name_sized: {
 			ztdc_thrd_attr_name_sized* __attr = (ztdc_thrd_attr_name_sized*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = __attr->size;
-				__ztdc_pthread_prepare_name_trampoline(
-				     &__impl_attrs, __trampoline_userdata, __name_size, (const char*)__attr->name);
+				__ztdc_pthread_prepare_name_trampoline(&__impl_attrs, __trampoline_userdata, __name_size,
+				     (const char*)__attr->name, __ztdc_encoding_name_none);
 			}
 		} break;
 		case ztdc_thrd_attr_kind_mcname: {
 			ztdc_thrd_attr_mcname* __attr = (ztdc_thrd_attr_mcname*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = ztdc_c_string_ptr_size(__attr->name);
-				// TODO: convert from execution character set to UTF-8
 				__ztdc_pthread_prepare_name_trampoline(
-				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name);
+				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_mc);
 			}
 		} break;
 		case ztdc_thrd_attr_kind_mcname_sized: {
 			ztdc_thrd_attr_mcname_sized* __attr = (ztdc_thrd_attr_mcname_sized*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = __attr->size;
-				// TODO: convert from execution character set to UTF-8
 				__ztdc_pthread_prepare_name_trampoline(
-				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name);
+				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_mc);
 			}
 		} break;
 		case ztdc_thrd_attr_kind_mwcname: {
 			ztdc_thrd_attr_mwcname* __attr = (ztdc_thrd_attr_mwcname*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = ztdc_c_string_ptr_size(__attr->name);
-				// TODO: convert from wide execution character set to UTF-8
 				__ztdc_pthread_prepare_name_trampoline(
-				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name);
+				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_mwc);
 			}
 		} break;
 		case ztdc_thrd_attr_kind_mwcname_sized: {
 			ztdc_thrd_attr_mwcname_sized* __attr = (ztdc_thrd_attr_mwcname_sized*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = __attr->size;
-				// TODO: convert from wide execution character set to UTF-8
 				__ztdc_pthread_prepare_name_trampoline(
-				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name);
+				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_mwc);
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c8name: {
 			ztdc_thrd_attr_c8name* __attr = (ztdc_thrd_attr_c8name*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = ztdc_c_string_ptr_size(__attr->name);
-				// TODO: convert from wide execution character set to UTF-8
 				__ztdc_pthread_prepare_name_trampoline(
-				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name);
+				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_c8);
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c8name_sized: {
@@ -323,43 +395,39 @@ int ztdc_thrd_create_attrs(
 			if (__attr->name) {
 				const size_t __name_size = __attr->size;
 				__ztdc_pthread_prepare_name_trampoline(
-				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name);
+				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_c8);
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c16name: {
 			ztdc_thrd_attr_c16name* __attr = (ztdc_thrd_attr_c16name*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = ztdc_c_string_ptr_size(__attr->name);
-				// TODO: convert from UTF-16 to UTF-8
 				__ztdc_pthread_prepare_name_trampoline(
-				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name);
+				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_c16);
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c16name_sized: {
 			ztdc_thrd_attr_c16name_sized* __attr = (ztdc_thrd_attr_c16name_sized*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = __attr->size;
-				// TODO: convert from UTF-16 to UTF-8
 				__ztdc_pthread_prepare_name_trampoline(
-				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name);
+				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_c16);
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c32name: {
 			ztdc_thrd_attr_c32name* __attr = (ztdc_thrd_attr_c32name*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = ztdc_c_string_ptr_size(__attr->name);
-				// TODO: convert from UTF-32 to UTF-8
 				__ztdc_pthread_prepare_name_trampoline(
-				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name);
+				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_c32);
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c32name_sized: {
 			ztdc_thrd_attr_c32name_sized* __attr = (ztdc_thrd_attr_c32name_sized*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = __attr->size;
-				// TODO: convert from UTF-32 to UTF-8
 				__ztdc_pthread_prepare_name_trampoline(
-				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name);
+				     &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_c32);
 			}
 		} break;
 		case ztdc_thrd_attr_kind_stack_size: {
@@ -397,9 +465,100 @@ int ztdc_thrd_create_attrs(
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
-int ztdc_thrd_get_name(thrd_t __thr, size_t __buffer_size, unsigned char* __buffer) {
+int ztdc_thrd_get_name(thrd_t __thr, size_t __buffer_size, void* __buffer) {
 	int __res = pthread_getname_np((pthread_t)__thr, (char*)__buffer, __buffer_size);
 	return __ztdc_pthread_to_thread_error(__res);
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_get_mcname(thrd_t __thr, size_t __buffer_size, char* __buffer) {
+	ztd_char8_t __pivot[ZTD_USE(ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE)];
+	const size_t __pivot_size = ztdc_c_array_size(__pivot);
+	int __res                 = pthread_getname_np((pthread_t)__thr, (char*)__pivot, __pivot_size);
+	if (__res != 0) {
+		return __ztdc_pthread_to_thread_error(__res);
+	}
+	size_t __real_pivot_size = ztdc_c_string_ptr_size_limit(__pivot_size, __pivot);
+	cnc_mcerr __conv_res
+	     = cnc_c8sntomcsn(&__buffer_size, &__buffer, &__real_pivot_size, (const ztd_char8_t**)&__pivot);
+	if (__conv_res == cnc_mcerr_ok) {
+		return thrd_success;
+	}
+	if (__conv_res == cnc_mcerr_invalid_sequence) {
+		return thrd_nomem;
+	}
+	return thrd_error;
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_get_mwcname(thrd_t __thr, size_t __buffer_size, ztd_wchar_t* __buffer) {
+	ztd_char8_t __pivot[ZTD_USE(ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE)];
+	const size_t __pivot_size = ztdc_c_array_size(__pivot);
+	int __res                 = pthread_getname_np((pthread_t)__thr, (char*)__pivot, __pivot_size);
+	if (__res != 0) {
+		return __ztdc_pthread_to_thread_error(__res);
+	}
+	size_t __real_pivot_size = ztdc_c_string_ptr_size_limit(__pivot_size, __pivot);
+	cnc_mcerr __conv_res
+	     = cnc_c8sntomwcsn(&__buffer_size, &__buffer, &__real_pivot_size, (const ztd_char8_t**)&__pivot);
+	if (__conv_res == cnc_mcerr_ok) {
+		return thrd_success;
+	}
+	if (__conv_res == cnc_mcerr_invalid_sequence) {
+		return thrd_nomem;
+	}
+	return thrd_error;
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_get_c8name(thrd_t __thr, size_t __buffer_size, ztd_char8_t* __buffer) {
+	int __res = pthread_getname_np((pthread_t)__thr, (char*)__buffer, __buffer_size);
+	return __ztdc_pthread_to_thread_error(__res);
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_get_c16name(thrd_t __thr, size_t __buffer_size, ztd_char16_t* __buffer) {
+	ztd_char8_t __pivot[ZTD_USE(ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE)];
+	const size_t __pivot_size      = ztdc_c_array_size(__pivot);
+	const ztd_char8_t* __pivot_ptr = (const ztd_char8_t*)&__pivot[0];
+	int __res                      = pthread_getname_np((pthread_t)__thr, (char*)__pivot, __pivot_size);
+	if (__res != 0) {
+		return __ztdc_pthread_to_thread_error(__res);
+	}
+	size_t __real_pivot_size = ztdc_c_string_ptr_size_limit(__pivot_size, __pivot);
+	cnc_mcerr __conv_res     = cnc_c8sntoc16sn(&__buffer_size, &__buffer, &__real_pivot_size, &__pivot_ptr);
+	if (__conv_res == cnc_mcerr_ok) {
+		return thrd_success;
+	}
+	if (__conv_res == cnc_mcerr_invalid_sequence) {
+		return thrd_nomem;
+	}
+	return thrd_error;
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_get_c32name(thrd_t __thr, size_t __buffer_size, ztd_char32_t* __buffer) {
+	ztd_char8_t __pivot[ZTD_USE(ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE)];
+	const size_t __pivot_size      = ztdc_c_array_size(__pivot);
+	const ztd_char8_t* __pivot_ptr = (const ztd_char8_t*)&__pivot[0];
+	int __res                      = pthread_getname_np((pthread_t)__thr, (char*)__pivot, __pivot_size);
+	if (__res != 0) {
+		return __ztdc_pthread_to_thread_error(__res);
+	}
+	size_t __real_pivot_size = ztdc_c_string_ptr_size_limit(__pivot_size, __pivot);
+	cnc_mcerr __conv_res     = cnc_c8sntoc32sn(&__buffer_size, &__buffer, &__real_pivot_size, &__pivot_ptr);
+	if (__conv_res == cnc_mcerr_ok) {
+		return thrd_success;
+	}
+	if (__conv_res == cnc_mcerr_invalid_sequence) {
+		return thrd_error;
+	}
+	return thrd_nomem;
 }
 
 #endif

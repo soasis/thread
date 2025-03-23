@@ -40,7 +40,7 @@
 extern "C" inline int thrd_main(void* arg) {
 	int t_id           = *(int*)arg;
 	char name_buf[128] = {};
-	int success        = ztdc_thrd_get_name(thrd_current(), sizeof(name_buf), (unsigned char*)name_buf);
+	int success        = ztdc_thrd_get_name(thrd_current(), sizeof(name_buf), name_buf);
 	if (success == thrd_success) {
 		const char* t_name = name_buf;
 		if (t_id == 1) {
@@ -49,9 +49,6 @@ extern "C" inline int thrd_main(void* arg) {
 		else {
 			REQUIRE(std::strcmp(t_name, "bark?!?!") == 0);
 		}
-		std::printf("thread id: %d\n", t_id);
-		std::printf("thread name: %s\n", t_name);
-		std::printf("\n");
 	}
 	thrd_exit(t_id);
 }
@@ -61,7 +58,7 @@ TEST_CASE("thread test with new name/id checks", "[thrd][thrd_with_create_attrs]
 	thrd_t t1 = {};
 
 	ztdc_thrd_attr_c16name name_attr = { // format
-		ztdc_thrd_attr_kind_name, u"meow?!\0\0\0"
+		ztdc_thrd_attr_kind_c16name, u"meow?!"
 	};
 	ztdc_thrd_attr_stack_size stack_size_attr = {
 		ztdc_thrd_attr_kind_stack_size,
@@ -84,7 +81,7 @@ TEST_CASE("thread test with new name/id checks", "[thrd][thrd_with_create_attrs]
 
 	int t0_id = 1;
 	ztdc_thrd_create_attrs(&t0, thrd_main, &t0_id, ztdc_c_array_size(attrs), attrs);
-	name_attr.name = u"bark?!?!\0\0\0";
+	name_attr.name = u"bark?!?!";
 	int t1_id      = 2;
 	ztdc_thrd_create_attrs(&t1, thrd_main, &t1_id, ztdc_c_array_size(attrs), attrs);
 

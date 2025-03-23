@@ -35,6 +35,8 @@
 
 #include <ztd/idk/version.h>
 
+#include <ztd/thread/detail/api.h>
+
 #define ZTD_THREAD_VERSION_MAJOR 0
 #define ZTD_THREAD_VERSION_MINOR 0
 #define ZTD_THREAD_VERSION_PATCH 0
@@ -42,6 +44,57 @@
 #define ZTD_THREAD_VERSION \
 	((ZTD_THREAD_VERSION_MAJOR * 100000) + (ZTD_THREAD_VERSION_MINOR * 100) + (ZTD_THREAD_VERSION_PATCH))
 
-#include <ztd/thread/detail/api.h>
+// clang-format off
+#if defined(ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE)
+	#define ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE_I_ ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE
+#else
+	#if ZTD_IS_ON(ZTD_COMPILER_VCXX) || ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
+		// "The reserve value specifies the total stack allocation in virtual memory. 
+		// For ARM, x86 and x64 machines, the default stack size is 1 MB."
+		// ...
+		// "For ARM, x86 and x64 machines, the default commit value is 4 KB"
+		// https://docs.microsoft.com/en-us/cpp/build/reference/stack-stack-allocations?view=vs-2019
+		// Uses: (1024 * 64)
+		#define ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE_I_ (65536)
+	#elif ZTD_IS_ON(ZTD_PLATFORM_MAC_OS)
+		// "  -stack_size size
+		//     Specifies the maximum stack size for the main thread in a program.  Without this option a
+		//     program has a 8MB stack.  The argument size is a hexadecimal number with an optional lead-
+		//     ing 0x. The size should be a multiple of the architecture's page size (4KB or 16KB).
+		// ld(1) manpage on Mac OS
+		// Uses: 1024 * 4
+		#define ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE_I_ (4096)
+	#elif ZTD_IS_ON(ZTD_PLATFORM_LINUX) || ZTD_IS_ON(ZTD_PLATFORM_UNIX)
+		// "Here is the vale for a few architectures:"
+		//
+		//    │Architecture │ Default stack size │
+		//    ├─────────────┼────────────────────┤
+		//    │i386         │               2 MB │
+		//    ├─────────────┼────────────────────┤
+		//    │IA-64        │              32 MB │
+		//    ├─────────────┼────────────────────┤
+		//    │PowerPC      │               4 MB │
+		//    ├─────────────┼────────────────────┤
+		//    │S/390        │               2 MB │
+		//    ├─────────────┼────────────────────┤
+		//    │Sparc-32     │               2 MB │
+		//    ├─────────────┼────────────────────┤
+		//    │Sparc-64     │               4 MB │
+		//    ├─────────────┼────────────────────┤
+		//    │x86_64       │               2 MB │
+		//    └─────────────┴────────────────────┘
+		// http://man7.org/linux/man-pages/man3/pthread_create.3.html
+		// Uses: 1024 * 2
+		#define ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE_I_ (2048)
+	#else
+		// Tiny embbeded compiler shenanigans??
+		// Uses: 1024 / 8
+		#define ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE_I_ (128)
+	#endif // MSVC vs. others
+#endif // Intermediate buffer sizing
+
+#define ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE_I_(...) (ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE_I_ / sizeof(__VA_ARGS__))
+
+// clang-format on
 
 #endif

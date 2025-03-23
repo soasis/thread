@@ -41,13 +41,19 @@
 
 #include <xthreads.h>
 
+#if ZTD_IS_ON(ZTD_CXX)
+#include <cstdint>
+#else
+#include <stdint.h>
+#endif
+
 typedef _Thrd_t thrd_t;
 
 #else
 
 typedef struct thrd_t {
 	void* __handle;
-	unsigned int id;
+	uint32_t __id;
 } thrd_t;
 
 #endif
