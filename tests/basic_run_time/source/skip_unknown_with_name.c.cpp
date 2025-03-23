@@ -40,7 +40,7 @@
 extern "C" inline int thrd_main(void* arg) {
 	int t_id           = *(int*)arg;
 	char name_buf[128] = {};
-	int success        = ztdc_thrd_get_name(thrd_current(), sizeof(name_buf), name_buf);
+	int success        = ztdc_thrd_get_c8name(thrd_current(), sizeof(name_buf), (ztd_char8_t*)&name_buf[0]);
 	if (success == thrd_success) {
 		const char* t_name = name_buf;
 		if (t_id == 1) {

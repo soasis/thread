@@ -40,7 +40,7 @@
 #include <ztd/thread/detail/threads.attr.h>
 
 #if ZTD_IS_ON(ZTD_HEADER_THREADS_H)
-#if ZTD_IS_ON(ZTD_CXX) && ZTD_IS_OFF(ZTD_LIBVCXX)
+#if ZTD_IS_ON(ZTD_CXX) && ZTD_IS_ON(ZTD_HEADER_CTHREADS)
 #include <cthreads>
 #else
 #include <threads.h>

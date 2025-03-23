@@ -143,7 +143,7 @@ void thrd_yield(void) {
 	(void)sched_yield();
 #elif ZTD_IS_ON(ZTD_PLATFORM_MAC_OS)
 	pthread_yield_np();
-#elif defined(_GNU_SOURCE)
+#elif defined(_GNU_SOURCE) && defined(__USE_GNU)
 	// might be deprecated: if this ever builds like this, silence the warning
 	// it's implementation-defiend if it yields anyways:
 	// not really our problem if the scehduler/OS doesn't want its time slice back.

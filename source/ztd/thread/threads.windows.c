@@ -65,7 +65,7 @@ int __ztdc_xthreads_to_thread_error(int __code) {
 	return __code;
 }
 
-static inline unsigned int* __ztdc_win32_handle_ptr(thrd_t* __thr) {
+static inline void** __ztdc_win32_handle_ptr(thrd_t* __thr) {
 #if ZTD_IS_ON(ZTD_HEADER_THREADS_H)
 	return &__thr->_Handle;
 #elif ZTD_IS_ON(ZTD_HEADER_XTHREADS_H)
@@ -75,7 +75,7 @@ static inline unsigned int* __ztdc_win32_handle_ptr(thrd_t* __thr) {
 #endif
 }
 
-static inline void** __ztdc_win32_handle_id(thrd_t* __thr) {
+static inline uint32_t* __ztdc_win32_handle_id(thrd_t* __thr) {
 #if ZTD_IS_ON(ZTD_HEADER_THREADS_H)
 	return &__thr->_Tid;
 #elif ZTD_IS_ON(ZTD_HEADER_XTHREADS_H)
@@ -126,7 +126,7 @@ ZTD_USE(ZTD_THREAD_API_LINKAGE)
 thrd_t thrd_current(void) {
 	thrd_t __current_thr = {
 		GetCurrentThread(),
-		GetCurrentThreadId(),
+		(uint32_t)GetCurrentThreadId(),
 	};
 	return __current_thr;
 }
@@ -176,18 +176,15 @@ int thrd_sleep(const struct timespec* __duration, struct timespec* __remaining) 
 typedef struct __ztdc_win32thread_trampoline_t {
 	thrd_start_t __func;
 	void* __func_arg;
-	bool __immediate_detach;
 } __ztdc_win32thread_trampoline_t;
 
 inline static DWORD __ztdc_win32thread_trampoline(LPVOID __userdata) {
-	thrd_start_t __func     = NULL;
-	void* __func_arg        = NULL;
-	bool __immediate_detach = false;
+	thrd_start_t __func = NULL;
+	void* __func_arg    = NULL;
 	{
 		__ztdc_win32thread_trampoline_t* __trampoline_userdata = (__ztdc_win32thread_trampoline_t*)__userdata;
 		__func                                                 = __trampoline_userdata->__func;
 		__func_arg                                             = __trampoline_userdata->__func_arg;
-		__immediate_detach                                     = __trampoline_userdata->__immediate_detach;
 		free(__trampoline_userdata);
 	}
 	if (!__func) {
@@ -195,9 +192,6 @@ inline static DWORD __ztdc_win32thread_trampoline(LPVOID __userdata) {
 	}
 	ztdc_static_assert(
 	     sizeof(DWORD) >= sizeof(int), "size of `int` is too large for a `void*`: trampoline will not work");
-	if (__immediate_detach) {
-		thrd_detach(thrd_current());
-	}
 	DWORD __win32_res = 0;
 	__win32_res       = __func(__func_arg);
 	return __win32_res;
@@ -207,15 +201,15 @@ ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
 int ztdc_thrd_create_attrs(
      thrd_t* __thr, thrd_start_t __func, void* __arg, size_t __attrs_size, ztdc_thrd_attr_kind** __attrs) {
-	bool __name_set = false;
+	bool __name_set         = false;
+	bool __immediate_detach = false;
 	wchar_t __name[1024 * 64 + 1]; // max size of Win32 thread name
-	const size_t __max_name_size = sizeof(__name);
+	const size_t __max_name_size = sizeof(__name) - 1;
 	ULONG __stack_size           = 1024 * 1000 * 2; // 2 mb default stack
 	__ztdc_win32thread_trampoline_t* __trampoline_userdata
 	     = (__ztdc_win32thread_trampoline_t*)malloc(sizeof(__ztdc_win32thread_trampoline_t));
-	__trampoline_userdata->__func             = __func;
-	__trampoline_userdata->__func_arg         = __arg;
-	__trampoline_userdata->__immediate_detach = true;
+	__trampoline_userdata->__func     = __func;
+	__trampoline_userdata->__func_arg = __arg;
 
 	for (size_t __attr_index = 0; __attr_index < __attrs_size; ++__attr_index) {
 		ztdc_thrd_attr_kind* __attr_kind = __attrs[__attr_index];
@@ -233,15 +227,25 @@ int ztdc_thrd_create_attrs(
 		case ztdc_thrd_attr_kind_mcname: {
 			ztdc_thrd_attr_mcname* __attr = (ztdc_thrd_attr_mcname*)__attr_kind;
 			if (__attr->name) {
-				const size_t __attr_name_size = ztdc_c_string_ptr_size_wc((const wchar_t*)__attr->name);
-				// TODO: convert from execution character set to UTF-16
+				const char* __attr_name_ptr = __attr->name;
+				size_t __attr_name_size     = ztdc_c_string_ptr_size(__attr->name);
+				wchar_t* __name_ptr         = __name;
+				size_t __name_size          = __max_name_size;
+				cnc_mcsntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
+				__name_ptr[0] = L'\0';
+				__name_set    = true;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_mcname_sized: {
 			ztdc_thrd_attr_mcname_sized* __attr = (ztdc_thrd_attr_mcname_sized*)__attr_kind;
 			if (__attr->name) {
-				const size_t __attr_name_size = __attr->size;
-				// TODO: convert from execution character set to UTF-16
+				const char* __attr_name_ptr = __attr->name;
+				size_t __attr_name_size     = __attr->size;
+				wchar_t* __name_ptr         = __name;
+				size_t __name_size          = __max_name_size;
+				cnc_mcsntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
+				__name_ptr[0] = L'\0';
+				__name_set    = true;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_mwcname_sized: {
@@ -257,14 +261,25 @@ int ztdc_thrd_create_attrs(
 		case ztdc_thrd_attr_kind_c8name: {
 			ztdc_thrd_attr_c8name* __attr = (ztdc_thrd_attr_c8name*)__attr_kind;
 			if (__attr->name) {
-				const size_t __attr_name_size = ztdc_c_string_ptr_size(__attr->name) * sizeof(__attr->name[0]);
-				// TODO: convert from wide execution character set to UTF-16
+				const ztd_char8_t* __attr_name_ptr = __attr->name;
+				size_t __attr_name_size            = ztdc_c_string_ptr_size(__attr->name);
+				wchar_t* __name_ptr                = __name;
+				size_t __name_size                 = __max_name_size;
+				cnc_c8sntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
+				__name_ptr[0] = L'\0';
+				__name_set    = true;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c8name_sized: {
 			ztdc_thrd_attr_c8name_sized* __attr = (ztdc_thrd_attr_c8name_sized*)__attr_kind;
 			if (__attr->name) {
-				const size_t __attr_name_size = __attr->size * sizeof(__attr->name[0]);
+				const ztd_char8_t* __attr_name_ptr = __attr->name;
+				size_t __attr_name_size            = __attr->size;
+				wchar_t* __name_ptr                = __name;
+				size_t __name_size                 = __max_name_size;
+				cnc_c8sntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
+				__name_ptr[0] = L'\0';
+				__name_set    = true;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c16name_sized: {
@@ -280,15 +295,25 @@ int ztdc_thrd_create_attrs(
 		case ztdc_thrd_attr_kind_c32name: {
 			ztdc_thrd_attr_c32name* __attr = (ztdc_thrd_attr_c32name*)__attr_kind;
 			if (__attr->name) {
-				const size_t __attr_name_size = ztdc_c_string_ptr_size(__attr->name) * sizeof(__attr->name[0]);
-				// TODO: convert from UTF-32 to UTF-16
+				const ztd_char32_t* __attr_name_ptr = __attr->name;
+				size_t __attr_name_size             = ztdc_c_string_ptr_size(__attr->name);
+				wchar_t* __name_ptr                 = __name;
+				size_t __name_size                  = __max_name_size;
+				cnc_c32sntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
+				__name_ptr[0] = L'\0';
+				__name_set    = true;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c32name_sized: {
 			ztdc_thrd_attr_c32name_sized* __attr = (ztdc_thrd_attr_c32name_sized*)__attr_kind;
 			if (__attr->name) {
-				const size_t __attr_name_size = __attr->size * sizeof(__attr->name[0]);
-				// TODO: convert from UTF-32 to UTF-16
+				const ztd_char32_t* __attr_name_ptr = __attr->name;
+				size_t __attr_name_size             = __attr->size;
+				wchar_t* __name_ptr                 = __name;
+				size_t __name_size                  = __max_name_size;
+				cnc_c32sntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
+				__name_ptr[0] = L'\0';
+				__name_set    = true;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_stack_size: {
@@ -296,8 +321,8 @@ int ztdc_thrd_create_attrs(
 			__stack_size                      = __attr->size;
 		} break;
 		case ztdc_thrd_attr_kind_detached: {
-			ztdc_thrd_attr_detached* __attr           = (ztdc_thrd_attr_detached*)__attr_kind;
-			__trampoline_userdata->__immediate_detach = __attr->detached;
+			ztdc_thrd_attr_detached* __attr = (ztdc_thrd_attr_detached*)__attr_kind;
+			__immediate_detach              = __attr->detached;
 		} break;
 		default:
 			break;
@@ -305,16 +330,8 @@ int ztdc_thrd_create_attrs(
 	}
 	// The thread is created suspended so we can set the name on it and other parameters,
 	// then we kick it off by setting the name in-line.
-#if ZTD_IS_ON(ZTD_HEADER_THREADS_H)
-	HANDLE* __handle      = __ztdc_win32_handle_ptr(&__thr);
-	uint32_t* __thread_id = __ztdc_win32_handle_id(&__thr);
-#elif ZTD_IS_ON(ZTD_HEADER_XTHREADS_H)
-	HANDLE* __handle        = __ztdc_win32_handle_ptr(&__thr);
-	_Thrd_id_t* __thread_id = __ztdc_win32_handle_id(&__thr);
-#else
-	HANDLE* __handle      = __ztdc_win32_handle_ptr(&__thr);
-	uint32_t* __thread_id = __ztdc_win32_handle_id(&__thr);
-#endif
+	HANDLE* __handle      = __ztdc_win32_handle_ptr(__thr);
+	uint32_t* __thread_id = __ztdc_win32_handle_id(__thr);
 	DWORD __threadnum;
 	*__handle = CreateThread(
 	     NULL, __stack_size, __ztdc_win32thread_trampoline, __trampoline_userdata, CREATE_SUSPENDED, &__threadnum);
@@ -322,7 +339,7 @@ int ztdc_thrd_create_attrs(
 		// TODO: check GetLastError() and translate the failure
 		return thrd_error;
 	}
-	*__thread_id = (unsigned int)__threadnum;
+	*__thread_id = (uint32_t)__threadnum;
 	// set the name from the buffer, if we have it
 	for (size_t __attr_index = 0; __attr_index < __attrs_size; ++__attr_index) {
 		ztdc_thrd_attr_kind* __attr_kind = __attrs[__attr_index];
@@ -360,6 +377,11 @@ int ztdc_thrd_create_attrs(
 		(void)__name_res;
 		// ... well, if the thread succeeded but this didn't it's still fine, actually?
 	}
+	if (__immediate_detach) {
+		int __detach_res = thrd_detach(*__thr);
+		(void)__detach_res;
+		// again, kind of important but also not something to fail the whole function over.
+	}
 	// All attributes we care about set: start the thread up now
 	DWORD __thread_started = ResumeThread(*__handle);
 	if (__thread_started == (DWORD)-1) {
@@ -374,7 +396,7 @@ int ztdc_thrd_create_attrs(
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
-int ztdc_thrd_get_name(thrd_t __thr, size_t __buffer_size, unsigned char* __buffer) {
+int ztdc_thrd_get_name(thrd_t __thr, size_t __buffer_size, void* __buffer) {
 	if (__buffer == NULL) {
 		return thrd_success;
 	}
@@ -382,27 +404,46 @@ int ztdc_thrd_get_name(thrd_t __thr, size_t __buffer_size, unsigned char* __buff
 		if (__buffer_size == 0) {
 			return thrd_success;
 		}
-		__buffer[0] = '\0';
+		((unsigned char*)__buffer)[0] = '\0';
 		return thrd_success;
 	}
-	HANDLE __handle = 0;
-	memcpy(&__handle, &__thr, sizeof(void*));
-	ztd_char16_t* __impl_wide_str = NULL;
-	HRESULT __res                 = GetThreadDescription(__handle, (PWSTR*)&__impl_wide_str);
+	DWORD __id                = *__ztdc_win32_handle_id(&__thr);
+	DWORD __current_thread_id = GetCurrentThreadId();
+	HANDLE __handle           = NULL;
+	if (__id != __current_thread_id) {
+		__handle = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, __id);
+	}
+	else {
+		__handle = GetCurrentThread();
+	}
+	if (__handle == NULL) {
+		return thrd_error;
+	}
+	WCHAR* __impl_wide_str = NULL;
+	HRESULT __res          = GetThreadDescription(GetCurrentThread(), &__impl_wide_str);
+	if (__id != __current_thread_id) {
+		if (CloseHandle(__handle) == 0) {
+			if (SUCCEEDED(__res)) {
+				LocalFree(__impl_wide_str);
+			}
+			return thrd_error;
+		}
+	}
 	if (FAILED(__res)) {
 		return thrd_error;
 	}
-	size_t __impl_wide_str_size = wcslen((const wchar_t*)__impl_wide_str);
+	size_t __impl_wide_str_size = ztdc_c_string_ptr_size(__impl_wide_str);
 	if (__impl_wide_str_size == 0) {
 		LocalFree(__impl_wide_str);
-		__buffer[0] = 0;
+		((unsigned char*)__buffer)[0] = 0;
 		return thrd_success;
 	}
 	const size_t __impl_wide_str_bytesize = (__impl_wide_str_size) * sizeof(ztd_char16_t);
 	const size_t __buffer_bytesize        = (__buffer_size - 1) * sizeof(ztd_char8_t);
-	const size_t __copy_size              = __buffer_bytesize > __impl_wide_str_bytesize ?: __buffer_bytesize;
+	const size_t __copy_size
+	     = __buffer_bytesize > __impl_wide_str_bytesize ? __impl_wide_str_bytesize : __buffer_bytesize;
 	memcpy(__buffer, __impl_wide_str, __copy_size);
-	__buffer[__copy_size / sizeof(ztd_char8_t)] = 0;
+	((unsigned char*)__buffer)[__copy_size / sizeof(unsigned char)] = 0;
 	LocalFree(__impl_wide_str);
 	return thrd_success;
 }
@@ -422,26 +463,51 @@ int ztdc_thrd_get_mcname(thrd_t __thr, size_t __buffer_size, char* __buffer) {
 		__buffer[0] = '\0';
 		return thrd_success;
 	}
-	HANDLE __handle = 0;
-	memcpy(&__handle, &__thr, sizeof(void*));
-	ztd_char16_t* __impl_wide_str = NULL;
-	HRESULT __res                 = GetThreadDescription(__handle, (PWSTR*)&__impl_wide_str);
+	DWORD __id                = *__ztdc_win32_handle_id(&__thr);
+	DWORD __current_thread_id = GetCurrentThreadId();
+	HANDLE __handle           = NULL;
+	if (__id != __current_thread_id) {
+		__handle = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, __id);
+	}
+	else {
+		__handle = GetCurrentThread();
+	}
+	if (__handle == NULL) {
+		return thrd_error;
+	}
+	WCHAR* __impl_wide_str = NULL;
+	HRESULT __res          = GetThreadDescription(GetCurrentThread(), &__impl_wide_str);
+	if (__id != __current_thread_id) {
+		if (CloseHandle(__handle) == 0) {
+			if (SUCCEEDED(__res)) {
+				LocalFree(__impl_wide_str);
+			}
+			return thrd_error;
+		}
+	}
 	if (FAILED(__res)) {
 		return thrd_error;
 	}
-	size_t __impl_wide_str_size = wcslen((const wchar_t*)__impl_wide_str);
+	size_t __impl_wide_str_size = ztdc_c_string_ptr_size(__impl_wide_str);
 	if (__impl_wide_str_size == 0) {
 		LocalFree(__impl_wide_str);
 		__buffer[0] = 0;
 		return thrd_success;
 	}
+	WCHAR* __original_impl_wide_str = __impl_wide_str;
 	__buffer_size -= 1;
 	cnc_mcerr __conv_res
 	     = cnc_c16sntomcsn(&__buffer_size, &__buffer, &__impl_wide_str_size, (const ztd_char16_t**)&__impl_wide_str);
-	LocalFree(__impl_wide_str);
+	LocalFree(__original_impl_wide_str);
 	__buffer[0] = '\0';
-	return __conv_res == cnc_mcerr_ok ? thrd_success
-	                                  : (__conv_res == cnc_mcerr_invalid_sequence ? thrd_error : thrd_nomem);
+	switch (__conv_res) {
+	case cnc_mcerr_ok:
+		return thrd_success;
+	case cnc_mcerr_invalid_sequence:
+		return thrd_error;
+	default:
+		return thrd_nomem;
+	}
 }
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
@@ -457,22 +523,41 @@ int ztdc_thrd_get_mwcname(thrd_t __thr, size_t __buffer_size, ztd_wchar_t* __buf
 		__buffer[0] = '\0';
 		return thrd_success;
 	}
-	HANDLE __handle = 0;
-	memcpy(&__handle, &__thr, sizeof(void*));
-	ztd_char16_t* __impl_wide_str = NULL;
-	HRESULT __res                 = GetThreadDescription(__handle, (PWSTR*)&__impl_wide_str);
+	DWORD __id                = *__ztdc_win32_handle_id(&__thr);
+	DWORD __current_thread_id = GetCurrentThreadId();
+	HANDLE __handle           = NULL;
+	if (__id != __current_thread_id) {
+		__handle = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, __id);
+	}
+	else {
+		__handle = GetCurrentThread();
+	}
+	if (__handle == NULL) {
+		return thrd_error;
+	}
+	WCHAR* __impl_wide_str = NULL;
+	HRESULT __res          = GetThreadDescription(GetCurrentThread(), &__impl_wide_str);
+	if (__id != __current_thread_id) {
+		if (CloseHandle(__handle) == 0) {
+			if (SUCCEEDED(__res)) {
+				LocalFree(__impl_wide_str);
+			}
+			return thrd_error;
+		}
+	}
 	if (FAILED(__res)) {
 		return thrd_error;
 	}
-	size_t __impl_wide_str_size = wcslen((const wchar_t*)__impl_wide_str);
+	size_t __impl_wide_str_size = ztdc_c_string_ptr_size(__impl_wide_str);
 	if (__impl_wide_str_size == 0) {
-		__buffer[0] = 0;
 		LocalFree(__impl_wide_str);
+		__buffer[0] = 0;
 		return thrd_success;
 	}
 	const size_t __impl_wide_str_bytesize = (__impl_wide_str_size) * sizeof(ztd_char16_t);
 	const size_t __buffer_bytesize        = (__buffer_size - 1) * sizeof(ztd_char16_t);
-	const size_t __copy_size              = __buffer_bytesize > __impl_wide_str_bytesize ?: __buffer_bytesize;
+	const size_t __copy_size
+	     = __buffer_bytesize > __impl_wide_str_bytesize ? __impl_wide_str_bytesize : __buffer_bytesize;
 	memcpy(__buffer, __impl_wide_str, __copy_size);
 	__buffer[__copy_size / sizeof(wchar_t)] = 0;
 	LocalFree(__impl_wide_str);
@@ -492,26 +577,51 @@ int ztdc_thrd_get_c8name(thrd_t __thr, size_t __buffer_size, ztd_char8_t* __buff
 		__buffer[0] = '\0';
 		return thrd_success;
 	}
-	HANDLE __handle = 0;
-	memcpy(&__handle, &__thr, sizeof(void*));
-	ztd_char16_t* __impl_wide_str = NULL;
-	HRESULT __res                 = GetThreadDescription(__handle, (PWSTR*)&__impl_wide_str);
+	DWORD __id                = *__ztdc_win32_handle_id(&__thr);
+	DWORD __current_thread_id = GetCurrentThreadId();
+	HANDLE __handle           = NULL;
+	if (__id != __current_thread_id) {
+		__handle = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, __id);
+	}
+	else {
+		__handle = GetCurrentThread();
+	}
+	if (__handle == NULL) {
+		return thrd_error;
+	}
+	WCHAR* __impl_wide_str = NULL;
+	HRESULT __res          = GetThreadDescription(GetCurrentThread(), &__impl_wide_str);
+	if (__id != __current_thread_id) {
+		if (CloseHandle(__handle) == 0) {
+			if (SUCCEEDED(__res)) {
+				LocalFree(__impl_wide_str);
+			}
+			return thrd_error;
+		}
+	}
 	if (FAILED(__res)) {
 		return thrd_error;
 	}
-	size_t __impl_wide_str_size = wcslen((const wchar_t*)__impl_wide_str);
+	size_t __impl_wide_str_size = ztdc_c_string_ptr_size(__impl_wide_str);
 	if (__impl_wide_str_size == 0) {
 		LocalFree(__impl_wide_str);
 		__buffer[0] = 0;
 		return thrd_success;
 	}
+	WCHAR* __original_impl_wide_str = __impl_wide_str;
 	__buffer_size -= 1;
 	cnc_mcerr __conv_res
 	     = cnc_c16sntoc8sn(&__buffer_size, &__buffer, &__impl_wide_str_size, (const ztd_char16_t**)&__impl_wide_str);
-	LocalFree(__impl_wide_str);
+	LocalFree(__original_impl_wide_str);
 	__buffer[0] = '\0';
-	return __conv_res == cnc_mcerr_ok ? thrd_success
-	                                  : (__conv_res == cnc_mcerr_invalid_sequence ? thrd_error : thrd_nomem);
+	switch (__conv_res) {
+	case cnc_mcerr_ok:
+		return thrd_success;
+	case cnc_mcerr_invalid_sequence:
+		return thrd_error;
+	default:
+		return thrd_nomem;
+	}
 }
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
@@ -527,14 +637,32 @@ int ztdc_thrd_get_c16name(thrd_t __thr, size_t __buffer_size, ztd_char16_t* __bu
 		__buffer[0] = '\0';
 		return thrd_success;
 	}
-	HANDLE __handle = 0;
-	memcpy(&__handle, &__thr, sizeof(void*));
-	ztd_char16_t* __impl_wide_str = NULL;
-	HRESULT __res                 = GetThreadDescription(__handle, (PWSTR*)&__impl_wide_str);
+	DWORD __id                = *__ztdc_win32_handle_id(&__thr);
+	DWORD __current_thread_id = GetCurrentThreadId();
+	HANDLE __handle           = NULL;
+	if (__id != __current_thread_id) {
+		__handle = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, __id);
+	}
+	else {
+		__handle = GetCurrentThread();
+	}
+	if (__handle == NULL) {
+		return thrd_error;
+	}
+	WCHAR* __impl_wide_str = NULL;
+	HRESULT __res          = GetThreadDescription(GetCurrentThread(), &__impl_wide_str);
+	if (__id != __current_thread_id) {
+		if (CloseHandle(__handle) == 0) {
+			if (SUCCEEDED(__res)) {
+				LocalFree(__impl_wide_str);
+			}
+			return thrd_error;
+		}
+	}
 	if (FAILED(__res)) {
 		return thrd_error;
 	}
-	size_t __impl_wide_str_size = wcslen((const wchar_t*)__impl_wide_str);
+	size_t __impl_wide_str_size = ztdc_c_string_ptr_size(__impl_wide_str);
 	if (__impl_wide_str_size == 0) {
 		LocalFree(__impl_wide_str);
 		__buffer[0] = 0;
@@ -542,7 +670,8 @@ int ztdc_thrd_get_c16name(thrd_t __thr, size_t __buffer_size, ztd_char16_t* __bu
 	}
 	const size_t __impl_wide_str_bytesize = (__impl_wide_str_size) * sizeof(ztd_char16_t);
 	const size_t __buffer_bytesize        = (__buffer_size - 1) * sizeof(ztd_char16_t);
-	const size_t __copy_size              = __buffer_bytesize > __impl_wide_str_bytesize ?: __buffer_bytesize;
+	const size_t __copy_size
+	     = __buffer_bytesize > __impl_wide_str_bytesize ? __impl_wide_str_bytesize : __buffer_bytesize;
 	memcpy(__buffer, __impl_wide_str, __copy_size);
 	__buffer[__copy_size / sizeof(ztd_char16_t)] = 0;
 	LocalFree(__impl_wide_str);
@@ -562,27 +691,51 @@ int ztdc_thrd_get_c32name(thrd_t __thr, size_t __buffer_size, ztd_char32_t* __bu
 		__buffer[0] = '\0';
 		return thrd_success;
 	}
-	HANDLE __handle = 0;
-	memcpy(&__handle, &__thr, sizeof(void*));
-	ztd_char16_t* __impl_wide_str = NULL;
-	HRESULT __res                 = GetThreadDescription(__handle, (PWSTR*)&__impl_wide_str);
-	if (FAILED(__res)) {
-		__buffer[0] = '\0';
+	DWORD __id                = *__ztdc_win32_handle_id(&__thr);
+	DWORD __current_thread_id = GetCurrentThreadId();
+	HANDLE __handle           = NULL;
+	if (__id != __current_thread_id) {
+		__handle = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, __id);
+	}
+	else {
+		__handle = GetCurrentThread();
+	}
+	if (__handle == NULL) {
 		return thrd_error;
 	}
-	size_t __impl_wide_str_size = wcslen((const wchar_t*)__impl_wide_str);
+	WCHAR* __impl_wide_str = NULL;
+	HRESULT __res          = GetThreadDescription(GetCurrentThread(), &__impl_wide_str);
+	if (__id != __current_thread_id) {
+		if (CloseHandle(__handle) == 0) {
+			if (SUCCEEDED(__res)) {
+				LocalFree(__impl_wide_str);
+			}
+			return thrd_error;
+		}
+	}
+	if (FAILED(__res)) {
+		return thrd_error;
+	}
+	size_t __impl_wide_str_size = ztdc_c_string_ptr_size(__impl_wide_str);
 	if (__impl_wide_str_size == 0) {
 		LocalFree(__impl_wide_str);
 		__buffer[0] = 0;
 		return thrd_success;
 	}
+	WCHAR* __original_impl_wide_str = __impl_wide_str;
 	__buffer_size -= 1;
 	cnc_mcerr __conv_res
 	     = cnc_c16sntoc32sn(&__buffer_size, &__buffer, &__impl_wide_str_size, (const ztd_char16_t**)&__impl_wide_str);
 	__buffer[0] = '\0';
-	LocalFree(__impl_wide_str);
-	return __conv_res == cnc_mcerr_ok ? thrd_success
-	                                  : (__conv_res == cnc_mcerr_invalid_sequence ? thrd_error : thrd_nomem);
+	LocalFree(__original_impl_wide_str);
+	switch (__conv_res) {
+	case cnc_mcerr_ok:
+		return thrd_success;
+	case cnc_mcerr_invalid_sequence:
+		return thrd_error;
+	default:
+		return thrd_nomem;
+	}
 }
 
 #endif

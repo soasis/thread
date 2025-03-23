@@ -175,6 +175,7 @@ target_link_libraries(ztd.thread
 target_compile_definitions(ztd.thread
 	PRIVATE
 		ZTD_THREAD_BUILD=1
+		_GNU_SOURCE=1
 	PUBLIC
 		$<$<STREQUAL:$<TARGET_PROPERTY:ztd.thread,TYPE>,SHARED_LIBRARY>:ZTD_THREAD_DLL=1>
 		${CMAKE_DL_LIBS}
