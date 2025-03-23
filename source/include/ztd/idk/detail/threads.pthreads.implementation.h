@@ -37,6 +37,7 @@
 
 #include <ztd/thread/threads.h>
 
+#include <pthread.h>
 #if ZTD_IS_ON(ZTD_HEADER_PTHREAD_NP_H)
 #include <pthread_np.h>
 #endif
