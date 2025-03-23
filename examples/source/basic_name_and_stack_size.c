@@ -43,7 +43,7 @@ inline static int thrd_main(void* arg) {
 	thrd_exit(t_id);
 }
 
-int main() {
+int main(void) {
 	thrd_t t0 = { 0 };
 	thrd_t t1 = { 0 };
 
