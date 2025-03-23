@@ -99,16 +99,16 @@ TEST_CASE("encoded thread name check", "[thrd][thrd_with_create_attrs][encoded-n
 		MAKE_TEST_BRACKET(mwc, L"meow?!", ztd_wchar_t, c8, u8"meow?!", ztd_char8_t);
 	}
 	SECTION("c8/u8/unicode") {
-		MAKE_TEST_BRACKET(c8, u8"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char8_t, c8,
-		     u8"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char8_t);
+		MAKE_TEST_BRACKET(c8, u8"\u300E\U0001F49Ayay!\u300F", ztd_char8_t, c8,
+		     u8"\u300E\U0001F49Ayay!\u300F", ztd_char8_t);
 	}
 	SECTION("c16/u/unicode") {
-		MAKE_TEST_BRACKET(c16, u"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char16_t, c8,
-		     u8"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char8_t);
+		MAKE_TEST_BRACKET(c16, u"\u300E\U0001F49Ayay!\u300F", ztd_char16_t, c8,
+		     u8"\u300E\U0001F49Ayay!\u300F", ztd_char8_t);
 	}
 	SECTION("c32/U/unicode") {
-		MAKE_TEST_BRACKET(c32, U"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char32_t, c8,
-		     u8"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char8_t);
+		MAKE_TEST_BRACKET(c32, U"\u300E\U0001F49Ayay!\u300F", ztd_char32_t, c8,
+		     u8"\u300E\U0001F49Ayay!\u300F", ztd_char8_t);
 	}
 
 	SECTION("c8/u8/ascii") {
@@ -127,16 +127,16 @@ TEST_CASE("encoded thread name check", "[thrd][thrd_with_create_attrs][encoded-n
 		MAKE_TEST_BRACKET(mwc, L"meow?!", ztd_wchar_t, c16, u"meow?!", ztd_char16_t);
 	}
 	SECTION("c8/u8/unicode") {
-		MAKE_TEST_BRACKET(c8, u8"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char8_t, c16,
-		     u"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char16_t);
+		MAKE_TEST_BRACKET(c8, u8"\u300E\U0001F49Ayay!\u300F", ztd_char8_t, c16,
+		     u"\u300E\U0001F49Ayay!\u300F", ztd_char16_t);
 	}
 	SECTION("c16/u/unicode") {
-		MAKE_TEST_BRACKET(c16, u"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char16_t, c16,
-		     u"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char16_t);
+		MAKE_TEST_BRACKET(c16, u"\u300E\U0001F49Ayay!\u300F", ztd_char16_t, c16,
+		     u"\u300E\U0001F49Ayay!\u300F", ztd_char16_t);
 	}
 	SECTION("c32/U/unicode") {
-		MAKE_TEST_BRACKET(c32, U"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char32_t, c16,
-		     u"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char16_t);
+		MAKE_TEST_BRACKET(c32, U"\u300E\U0001F49Ayay!\u300F", ztd_char32_t, c16,
+		     u"\u300E\U0001F49Ayay!\u300F", ztd_char16_t);
 	}
 
 	SECTION("c8/u8/ascii") {
@@ -155,16 +155,16 @@ TEST_CASE("encoded thread name check", "[thrd][thrd_with_create_attrs][encoded-n
 		MAKE_TEST_BRACKET(mwc, L"meow?!", ztd_wchar_t, c32, U"meow?!", ztd_char32_t);
 	}
 	SECTION("c8/u8/unicode") {
-		MAKE_TEST_BRACKET(c8, u8"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char8_t, c32,
-		     U"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char32_t);
+		MAKE_TEST_BRACKET(c8, u8"\u300E\U0001F49Ayay!\u300F", ztd_char8_t, c32,
+		     U"\u300E\U0001F49Ayay!\u300F", ztd_char32_t);
 	}
 	SECTION("c16/u/unicode") {
-		MAKE_TEST_BRACKET(c16, u"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char16_t, c32,
-		     U"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char32_t);
+		MAKE_TEST_BRACKET(c16, u"\u300E\U0001F49Ayay!\u300F", ztd_char16_t, c32,
+		     U"\u300E\U0001F49Ayay!\u300F", ztd_char32_t);
 	}
 	SECTION("c32/U/unicode") {
-		MAKE_TEST_BRACKET(c32, U"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char32_t, c32,
-		     U"\u300E\U0001F49A yay! \U0001F49A\u300F", ztd_char32_t);
+		MAKE_TEST_BRACKET(c32, U"\u300E\U0001F49Ayay!\u300F", ztd_char32_t, c32,
+		     U"\u300E\U0001F49Ayay!\u300F", ztd_char32_t);
 	}
 
 	SECTION("c8/u8/ascii") {
