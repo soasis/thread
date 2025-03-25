@@ -79,20 +79,25 @@ TEST_CASE("thread test with new name/id checks", "[thrd][thrd_with_create_attrs]
 		&name_attr.kind,
 	};
 
-	int t0_id = 1;
-	ztdc_thrd_create_attrs(&t0, thrd_main, &t0_id, ztdc_c_array_size(attrs), attrs);
-	name_attr.name = u"bark?!?!";
-	int t1_id      = 2;
-	auto err_func  = [&](const ztdc_thrd_attr_kind kind, int err) -> int {
+	int t0_id       = 1;
+	int create_err0 = ztdc_thrd_create_attrs(&t0, thrd_main, &t0_id, ztdc_c_array_size(attrs), attrs);
+	REQUIRE(create_err0 == thrd_success);
+
+	int t1_id           = 2;
+	int err_invocations = 0;
+	name_attr.name      = u"bark?!?!";
+	auto err_func       = [&](const ztdc_thrd_attr_kind kind, int err) -> int {
           REQUIRE(kind == priority_attr.kind);
           REQUIRE(err == thrd_error);
+          ++err_invocations;
           return thrd_success;
 	};
 	auto err_func_trampoline = [](const ztdc_thrd_attr_kind kind, int err, void* userdata) -> int {
 		return (*((decltype(err_func)*)userdata))(kind, err);
 	};
-	ztdc_thrd_create_attrs_err(
+	int create_err1 = ztdc_thrd_create_attrs_err(
 	     &t1, thrd_main, &t1_id, ztdc_c_array_size(attrs), attrs, err_func_trampoline, &err_func);
+	REQUIRE(create_err1 == thrd_success);
 
 	int res0 = 0;
 	int res1 = 0;
@@ -100,4 +105,5 @@ TEST_CASE("thread test with new name/id checks", "[thrd][thrd_with_create_attrs]
 	thrd_join(t1, &res1);
 	REQUIRE(res0 == 1);
 	REQUIRE(res1 == 2);
+	REQUIRE(err_invocations == 1);
 }

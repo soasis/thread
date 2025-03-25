@@ -434,7 +434,15 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 			ztdc_thrd_attr_detached* __attr = (ztdc_thrd_attr_detached*)__attr_kind;
 			__immediate_detach              = __attr->detached;
 		} break;
+		case ztdc_thrd_attr_kind_name:
+		case ztdc_thrd_attr_kind_mwcname:
+		case ztdc_thrd_attr_kind_c16name: {
+			// this is just to recognize the attribute: it's handled below later
+
+		} break;
 		default:
+			// unrecognized attribute
+			__attr_err = thrd_error;
 			break;
 		}
 		if (__attr_err != thrd_success) {
@@ -500,6 +508,8 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 			}
 		} break;
 		default:
+			// unrecognized attributes already handled above:
+			// do nothing here
 			break;
 		}
 		if (__attr_err != thrd_success) {

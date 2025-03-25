@@ -70,11 +70,14 @@ int main(void) {
 		&name_attr.kind,
 	};
 
-	int t0_id = 0;
-	ztdc_thrd_create_attrs(&t0, thrd_main, &t0_id, ztdc_c_array_size(attrs), attrs);
-	name_attr.name = U"bark?!?!";
-	int t1_id      = 1;
-	ztdc_thrd_create_attrs(&t1, thrd_main, &t1_id, ztdc_c_array_size(attrs), attrs);
+	int t0_id       = 0;
+	int create_err0 = ztdc_thrd_create_attrs(&t0, thrd_main, &t0_id, ztdc_c_array_size(attrs), attrs);
+	ZTD_ASSERT(create_err0 == thrd_success);
+
+	name_attr.name  = U"bark?!?!";
+	int t1_id       = 1;
+	int create_err1 = ztdc_thrd_create_attrs(&t1, thrd_main, &t1_id, ztdc_c_array_size(attrs), attrs);
+	ZTD_ASSERT(create_err1 == thrd_success);
 
 	int res0 = 0;
 	int res1 = 0;

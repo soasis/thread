@@ -79,8 +79,10 @@ int main(void) {
 		&name_attr.kind,
 	};
 
-	int t0_id = 0;
-	ztdc_thrd_create_attrs_err(&t0, thrd_main, &t0_id, ztdc_c_array_size(attrs), attrs, handle_attribute_errors, NULL);
+	int t0_id      = 0;
+	int create_err = ztdc_thrd_create_attrs_err(
+	     &t0, thrd_main, &t0_id, ztdc_c_array_size(attrs), attrs, handle_attribute_errors, NULL);
+	ZTD_ASSERT(create_err == thrd_success);
 
 	int res0 = 0;
 	thrd_join(t0, &res0);
