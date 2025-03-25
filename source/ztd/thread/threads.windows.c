@@ -47,21 +47,38 @@
 
 #include <ztd/idk/detail/windows.h>
 
-ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
-ZTD_USE(ZTD_THREAD_API_INTERNAL_LINKAGE)
-int __ztdc_win32_to_thread_error(int __code) {
+static inline int __ztdc_win32_to_thread_error(int __code) {
 	switch (__code) {
+	case ERROR_SUCCESS:
+		return thrd_success;
+	case WAIT_TIMEOUT:
+	case ERROR_TIMEOUT:
+	case ERROR_SEM_TIMEOUT:
+		return thrd_timedout;
+	case ERROR_NOT_READY:
+	case ERROR_LOCK_FAILED:
+	case ERROR_LOCK_VIOLATION:
+	case ERROR_LOCKED:
+		return thrd_busy;
+	case ERROR_INVALID_ACCESS:
+	case ERROR_INVALID_DATA:
+	case ERROR_BAD_LENGTH:
+		return thrd_error;
 	case ERROR_NOT_ENOUGH_MEMORY:
 	case ERROR_NOT_ENOUGH_SERVER_MEMORY:
+	case ERROR_OUTOFMEMORY:
 		return thrd_nomem;
-		break;
+	default:
+		return thrd_error;
 	}
-	return thrd_error;
 }
 
-ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
-ZTD_USE(ZTD_THREAD_API_INTERNAL_LINKAGE)
+static inline int __ztdc_hresult_to_thread_error(HRESULT __code) {
+	return __ztdc_win32_to_thread_error(HRESULT_CODE(__code));
+}
+
 int __ztdc_xthreads_to_thread_error(int __code) {
+	// fairly direct, one-to-one translation
 	return __code;
 }
 
@@ -92,8 +109,8 @@ static inline uint32_t* __ztdc_win32_handle_id(thrd_t* __thr) {
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
-int thrd_create(thrd_t* __thr, thrd_start_t __func, void* __arg) {
-	return ztdc_thrd_create_attrs(__thr, __func, __arg, 0, nullptr);
+int thrd_create(thrd_t* __thr, thrd_start_t __func, void* __func_arg) {
+	return ztdc_thrd_create_attrs(__thr, __func, __func_arg, 0, nullptr);
 }
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE) ZTD_USE(ZTD_THREAD_API_LINKAGE) int thrd_join(thrd_t __thr, int* __res) {
@@ -179,6 +196,8 @@ typedef struct __ztdc_win32thread_trampoline_t {
 } __ztdc_win32thread_trampoline_t;
 
 inline static DWORD __ztdc_win32thread_trampoline(LPVOID __userdata) {
+	ztdc_static_assert(
+	     sizeof(DWORD) >= sizeof(int), "size of `int` is too large for a `DWORD`: trampoline will not work");
 	thrd_start_t __func = NULL;
 	void* __func_arg    = NULL;
 	{
@@ -190,35 +209,45 @@ inline static DWORD __ztdc_win32thread_trampoline(LPVOID __userdata) {
 	if (!__func) {
 		return 0;
 	}
-	ztdc_static_assert(
-	     sizeof(DWORD) >= sizeof(int), "size of `int` is too large for a `void*`: trampoline will not work");
 	DWORD __win32_res = 0;
 	__win32_res       = __func(__func_arg);
 	return __win32_res;
 }
 
-ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
-ZTD_USE(ZTD_THREAD_API_LINKAGE)
-int ztdc_thrd_create_attrs(
-     thrd_t* __thr, thrd_start_t __func, void* __arg, size_t __attrs_size, const ztdc_thrd_attr_kind** __attrs) {
+inline static int __ztdc_ignore_all_thrd_errors(ztdc_thrd_attr_kind __kind, int __err, void* __userdata) {
+	(void)__kind;
+	(void)__err;
+	(void)__userdata;
+	return thrd_success;
 }
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
-int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __arg, size_t __attrs_size,
+int ztdc_thrd_create_attrs(
+     thrd_t* __thr, thrd_start_t __func, void* __func_arg, size_t __attrs_size, const ztdc_thrd_attr_kind** __attrs) {
+	return ztdc_thrd_create_attrs_err(
+	     __thr, __func, __func_arg, __attrs_size, __attrs, __ztdc_ignore_all_thrd_errors, NULL);
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_arg, size_t __attrs_size,
      const ztdc_thrd_attr_kind** __attrs, ztdc_thrd_attr_err_func_t* __attr_err_func, void* __attr_err_func_userdata) {
-	bool __name_set         = false;
-	bool __immediate_detach = false;
-	wchar_t __name[1024 * 64 + 1]; // max size of Win32 thread name
+	const thrd_t __original_thr     = *__thr;
+	ztdc_thrd_attr_kind __name_kind = ztdc_thrd_attr_kind_impl_def;
+	bool __name_set                 = false;
+	bool __immediate_detach         = false;
+	wchar_t __name[1024 * 64]; // max size of Win32 thread name
 	const size_t __max_name_size = sizeof(__name) - 1;
 	ULONG __stack_size           = 1024 * 1000 * 2; // 2 mb default stack
 	__ztdc_win32thread_trampoline_t* __trampoline_userdata
 	     = (__ztdc_win32thread_trampoline_t*)malloc(sizeof(__ztdc_win32thread_trampoline_t));
 	__trampoline_userdata->__func     = __func;
-	__trampoline_userdata->__func_arg = __arg;
+	__trampoline_userdata->__func_arg = __func_arg;
 
 	for (size_t __attr_index = 0; __attr_index < __attrs_size; ++__attr_index) {
-		ztdc_thrd_attr_kind* __attr_kind = __attrs[__attr_index];
+		const ztdc_thrd_attr_kind* __attr_kind = __attrs[__attr_index];
+		int __attr_err                         = thrd_success;
 		switch (*__attr_kind) {
 		case ztdc_thrd_attr_kind_name_sized: {
 			ztdc_thrd_attr_name_sized* __attr = (ztdc_thrd_attr_name_sized*)__attr_kind;
@@ -228,6 +257,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __arg, 
 				memcpy(&__name[0], __attr->name, __copy_size);
 				__name[__copy_size] = 0;
 				__name_set          = true;
+				__name_kind         = *__attr_kind;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_mcname: {
@@ -237,9 +267,21 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __arg, 
 				size_t __attr_name_size     = ztdc_c_string_ptr_size(__attr->name);
 				wchar_t* __name_ptr         = __name;
 				size_t __name_size          = __max_name_size;
-				cnc_mcsntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
-				__name_ptr[0] = L'\0';
-				__name_set    = true;
+				cnc_mcerr __conv_res
+				     = cnc_mcsntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
+				if (__conv_res != cnc_mcerr_ok) {
+					if (__conv_res == cnc_mcerr_invalid_sequence) {
+						__attr_err = thrd_error;
+					}
+					else {
+						__attr_err = thrd_nomem;
+					}
+				}
+				else {
+					__name_ptr[0] = L'\0';
+					__name_set    = true;
+					__name_kind   = *__attr_kind;
+				}
 			}
 		} break;
 		case ztdc_thrd_attr_kind_mcname_sized: {
@@ -249,9 +291,21 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __arg, 
 				size_t __attr_name_size     = __attr->size;
 				wchar_t* __name_ptr         = __name;
 				size_t __name_size          = __max_name_size;
-				cnc_mcsntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
-				__name_ptr[0] = L'\0';
-				__name_set    = true;
+				cnc_mcerr __conv_res
+				     = cnc_mcsntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
+				if (__conv_res != cnc_mcerr_ok) {
+					if (__conv_res == cnc_mcerr_invalid_sequence) {
+						__attr_err = thrd_error;
+					}
+					else {
+						__attr_err = thrd_nomem;
+					}
+				}
+				else {
+					__name_ptr[0] = L'\0';
+					__name_set    = true;
+					__name_kind   = *__attr_kind;
+				}
 			}
 		} break;
 		case ztdc_thrd_attr_kind_mwcname_sized: {
@@ -262,6 +316,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __arg, 
 				memcpy(&__name[0], __attr->name, __copy_size);
 				__name[__copy_size] = 0;
 				__name_set          = true;
+				__name_kind         = *__attr_kind;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c8name: {
@@ -271,9 +326,21 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __arg, 
 				size_t __attr_name_size            = ztdc_c_string_ptr_size(__attr->name);
 				wchar_t* __name_ptr                = __name;
 				size_t __name_size                 = __max_name_size;
-				cnc_c8sntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
-				__name_ptr[0] = L'\0';
-				__name_set    = true;
+				cnc_mcerr __conv_res
+				     = cnc_c8sntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
+				if (__conv_res != cnc_mcerr_ok) {
+					if (__conv_res == cnc_mcerr_invalid_sequence) {
+						__attr_err = thrd_error;
+					}
+					else {
+						__attr_err = thrd_nomem;
+					}
+				}
+				else {
+					__name_ptr[0] = L'\0';
+					__name_set    = true;
+					__name_kind   = *__attr_kind;
+				}
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c8name_sized: {
@@ -283,9 +350,21 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __arg, 
 				size_t __attr_name_size            = __attr->size;
 				wchar_t* __name_ptr                = __name;
 				size_t __name_size                 = __max_name_size;
-				cnc_c8sntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
-				__name_ptr[0] = L'\0';
-				__name_set    = true;
+				cnc_mcerr __conv_res
+				     = cnc_c8sntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
+				if (__conv_res != cnc_mcerr_ok) {
+					if (__conv_res == cnc_mcerr_invalid_sequence) {
+						__attr_err = thrd_error;
+					}
+					else {
+						__attr_err = thrd_nomem;
+					}
+				}
+				else {
+					__name_ptr[0] = L'\0';
+					__name_set    = true;
+					__name_kind   = *__attr_kind;
+				}
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c16name_sized: {
@@ -296,6 +375,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __arg, 
 				memcpy(&__name[0], __attr->name, __copy_size);
 				__name[__copy_size] = 0;
 				__name_set          = true;
+				__name_kind         = *__attr_kind;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c32name: {
@@ -305,9 +385,21 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __arg, 
 				size_t __attr_name_size             = ztdc_c_string_ptr_size(__attr->name);
 				wchar_t* __name_ptr                 = __name;
 				size_t __name_size                  = __max_name_size;
-				cnc_c32sntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
-				__name_ptr[0] = L'\0';
-				__name_set    = true;
+				cnc_mcerr __conv_res
+				     = cnc_c32sntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
+				if (__conv_res != cnc_mcerr_ok) {
+					if (__conv_res == cnc_mcerr_invalid_sequence) {
+						__attr_err = thrd_error;
+					}
+					else {
+						__attr_err = thrd_nomem;
+					}
+				}
+				else {
+					__name_ptr[0] = L'\0';
+					__name_set    = true;
+					__name_kind   = *__attr_kind;
+				}
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c32name_sized: {
@@ -317,9 +409,21 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __arg, 
 				size_t __attr_name_size             = __attr->size;
 				wchar_t* __name_ptr                 = __name;
 				size_t __name_size                  = __max_name_size;
-				cnc_c32sntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
-				__name_ptr[0] = L'\0';
-				__name_set    = true;
+				cnc_mcerr __conv_res
+				     = cnc_c32sntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
+				if (__conv_res != cnc_mcerr_ok) {
+					if (__conv_res == cnc_mcerr_invalid_sequence) {
+						__attr_err = thrd_error;
+					}
+					else {
+						__attr_err = thrd_nomem;
+					}
+				}
+				else {
+					__name_ptr[0] = L'\0';
+					__name_set    = true;
+					__name_kind   = *__attr_kind;
+				}
 			}
 		} break;
 		case ztdc_thrd_attr_kind_stack_size: {
@@ -333,6 +437,13 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __arg, 
 		default:
 			break;
 		}
+		if (__attr_err != thrd_success) {
+			int __attr_err_res = __attr_err_func(*__attr_kind, __attr_err, __attr_err_func_userdata);
+			if (__attr_err_res != thrd_success) {
+				free(__trampoline_userdata);
+				return thrd_success;
+			}
+		}
 	}
 	// The thread is created suspended so we can set the name on it and other parameters,
 	// then we kick it off by setting the name in-line.
@@ -343,58 +454,120 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __arg, 
 	     NULL, __stack_size, __ztdc_win32thread_trampoline, __trampoline_userdata, CREATE_SUSPENDED, &__threadnum);
 	if (*__handle == NULL) {
 		// TODO: check GetLastError() and translate the failure
+		free(__trampoline_userdata);
 		return thrd_error;
 	}
 	*__thread_id = (uint32_t)__threadnum;
 	// set the name from the buffer, if we have it
 	for (size_t __attr_index = 0; __attr_index < __attrs_size; ++__attr_index) {
-		ztdc_thrd_attr_kind* __attr_kind = __attrs[__attr_index];
+		const ztdc_thrd_attr_kind* __attr_kind = __attrs[__attr_index];
+		int __attr_err                         = thrd_success;
 		switch (*__attr_kind) {
 		case ztdc_thrd_attr_kind_name: {
 			ztdc_thrd_attr_name* __attr = (ztdc_thrd_attr_name*)__attr_kind;
 			if (__attr->name) {
 				HRESULT __name_res = SetThreadDescription(*__handle, (PCWSTR)__attr->name);
-				(void)__name_res;
-				__name_set = false;
+				if (FAILED(__name_res)) {
+					__attr_err = __ztdc_hresult_to_thread_error(__name_res);
+				}
+				else {
+					__name_set = false;
+				}
 			}
 		} break;
 		case ztdc_thrd_attr_kind_mwcname: {
 			ztdc_thrd_attr_mwcname* __attr = (ztdc_thrd_attr_mwcname*)__attr_kind;
 			if (__attr->name) {
 				HRESULT __name_res = SetThreadDescription(*__handle, (PCWSTR)__attr->name);
-				(void)__name_res;
-				__name_set = false;
+				if (FAILED(__name_res)) {
+					__attr_err = __ztdc_hresult_to_thread_error(__name_res);
+				}
+				else {
+					__name_set = false;
+				}
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c16name: {
 			ztdc_thrd_attr_c16name* __attr = (ztdc_thrd_attr_c16name*)__attr_kind;
 			if (__attr->name) {
 				HRESULT __name_res = SetThreadDescription(*__handle, (PCWSTR)__attr->name);
-				(void)__name_res;
-				__name_set = false;
+				if (FAILED(__name_res)) {
+					__attr_err = __ztdc_hresult_to_thread_error(__name_res);
+				}
+				else {
+					__name_set = false;
+				}
 			}
 		} break;
 		default:
 			break;
 		}
+		if (__attr_err != thrd_success) {
+			int __attr_err_res = __attr_err_func(*__attr_kind, __attr_err, __attr_err_func_userdata);
+			if (__attr_err_res != thrd_success) {
+				free(__trampoline_userdata);
+				CloseHandle(*__handle);
+				*__thr = __original_thr;
+				return __attr_err_res;
+			}
+		}
 	}
 	if (__name_set) {
 		HRESULT __name_res = SetThreadDescription(*__handle, __name);
-		(void)__name_res;
-		// ... well, if the thread succeeded but this didn't it's still fine, actually?
+		if (FAILED(__name_res)) {
+			int __attr_err = __ztdc_hresult_to_thread_error(__name_res);
+			if (__attr_err != thrd_success) {
+				int __attr_err_res = __attr_err_func(__name_kind, __attr_err, __attr_err_func_userdata);
+				if (__attr_err_res != thrd_success) {
+					free(__trampoline_userdata);
+					CloseHandle(*__handle);
+					*__thr = __original_thr;
+					return __attr_err_res;
+				}
+			}
+		}
+		else {
+			__name_set = false;
+		}
 	}
 	if (__immediate_detach) {
 		int __detach_res = thrd_detach(*__thr);
-		(void)__detach_res;
-		// again, kind of important but also not something to fail the whole function over.
+		if (__detach_res != thrd_success) {
+			int __attr_err_res
+			     = __attr_err_func(ztdc_thrd_attr_kind_detached, __detach_res, __attr_err_func_userdata);
+			if (__attr_err_res != thrd_success) {
+				free(__trampoline_userdata);
+				CloseHandle(*__handle);
+				*__thr = __original_thr;
+				return __attr_err_res;
+			}
+		}
 	}
 	// All attributes we care about set: start the thread up now
 	DWORD __thread_started = ResumeThread(*__handle);
 	if (__thread_started == (DWORD)-1) {
 		// well. this is a bit of a problem...
+		CloseHandle(*__handle);
+		free(__trampoline_userdata);
+		*__thr = __original_thr;
+		return __ztdc_win32_to_thread_error(GetLastError());
+	}
+	// 1 means it was suspended, then decremented to zero (what we want)
+	// 0 means it was already running (which is... okay?? but also kind of not what we want!!)
+	if (__thread_started == (DWORD)0) {
+		// if it was already running, than the trampoline userdata might've already been freed?
+		// this really should NEVER ever happen.....
+		CloseHandle(*__handle);
+		*__thr = __original_thr;
 		return thrd_error;
 	}
-	if (__thread_started != (DWORD)0 && __thread_started != (DWORD)1) {
+	if (__thread_started != (DWORD)1) {
+		// somehow, a thread WE created has been hijacked and given a weird, strange value.
+		// It's not running, and we've reached the end of this function. Delete
+		// everything and call it an error.
+		CloseHandle(*__handle);
+		free(__trampoline_userdata);
+		*__thr = __original_thr;
 		return thrd_error;
 	}
 	return thrd_success;
@@ -656,7 +829,7 @@ int ztdc_thrd_get_c16name(thrd_t __thr, size_t __buffer_size, ztd_char16_t* __bu
 		return thrd_error;
 	}
 	WCHAR* __impl_wide_str = NULL;
-	HRESULT __res          = GetThreadDescription(GetCurrentThread(), &__impl_wide_str);
+	HRESULT __res          = GetThreadDescription(__handle, &__impl_wide_str);
 	if (__id != __current_thread_id) {
 		if (CloseHandle(__handle) == 0) {
 			if (SUCCEEDED(__res)) {

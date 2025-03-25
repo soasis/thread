@@ -53,7 +53,7 @@ int main(void) {
 	};
 	ztdc_thrd_attr_stack_size stack_size_attr = {
 		.kind = ztdc_thrd_attr_kind_stack_size,
-		.size = 1024,
+		.size = 1024 * 16,
 	};
 	const struct ztdc_thrd_attr_priority {
 		ztdc_thrd_attr_kind kind;

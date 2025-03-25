@@ -79,9 +79,7 @@
 #define ZTD_THREAD_THREADS_REQUIRE_SYNCHRONIZATION_I_ ZTD_OFF
 #endif
 
-ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
-ZTD_USE(ZTD_THREAD_API_INTERNAL_LINKAGE)
-int __ztdc_pthread_to_thread_error(int __code) {
+inline static int __ztdc_pthread_to_thread_error(int __code) {
 	switch (__code) {
 	case 0:
 		return thrd_success;
@@ -478,6 +476,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 	pthread_attr_t __impl_attrs = { 0 };
 	int __impl_attr_init_res    = pthread_attr_init(&__impl_attrs);
 	if (__impl_attr_init_res != 0) {
+		free(__trampoline_userdata);
 		return __ztdc_pthread_to_thread_error(__impl_attr_init_res);
 	}
 	for (size_t __attr_index = 0; __attr_index < __attrs_size; ++__attr_index) {
@@ -621,6 +620,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 			if (__attr_err_res != thrd_success) {
 				int __impl_attr_destroy_res = pthread_attr_destroy(&__impl_attrs);
 				(void)__impl_attr_destroy_res;
+				free(__trampoline_userdata);
 				return __attr_err_res;
 			}
 		}
@@ -637,6 +637,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 	int __attr_res = pthread_attr_destroy(&__impl_attrs);
 	(void)__attr_res;
 	if (__result != 0) {
+		free(__trampoline_userdata);
 		return __ztdc_pthread_to_thread_error(__result);
 	}
 #if ZTD_IS_ON(ZTD_THREAD_THREADS_REQUIRE_SYNCHRONIZATION)

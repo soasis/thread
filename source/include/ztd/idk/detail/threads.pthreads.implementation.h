@@ -42,8 +42,4 @@
 #include <pthread_np.h>
 #endif
 
-ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
-ZTD_USE(ZTD_THREAD_API_INTERNAL_LINKAGE)
-int __ztdc_pthread_to_thread_error(int __code);
-
 #endif
