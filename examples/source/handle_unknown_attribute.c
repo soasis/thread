@@ -29,48 +29,48 @@
 // ============================================================================ //
 
 #include <ztd/thread.h>
+#include <ztd/idk/size.h>
+#include <ztd/idk/assert.h>
 
-#include <catch2/catch_all.hpp>
+#include <stdio.h>
+#include <limits.h>
 
-#include <ztd/idk/size.hpp>
-
-#include <cstring>
-#include <cstdio>
-
-extern "C" inline int thrd_main(void* arg) {
+inline static int thrd_main(void* arg) {
 	int t_id           = *(int*)arg;
-	char name_buf[128] = {};
-	int success        = ztdc_thrd_get_c8name(thrd_current(), sizeof(name_buf), (ztd_char8_t*)&name_buf[0]);
-	if (success == thrd_success) {
-		const char* t_name = name_buf;
-		if (t_id == 1) {
-			REQUIRE(std::strcmp(t_name, "meow?!") == 0);
-		}
-		else {
-			REQUIRE(std::strcmp(t_name, "bark?!?!") == 0);
-		}
-	}
+	char name_buf[128] = { 0 };
+	ztdc_thrd_get_c8name(thrd_current(), sizeof(name_buf), (unsigned char*)name_buf);
+	const char* t_name = name_buf;
+	printf("thread id: %d\n thread name: %s\n\n", t_id, t_name);
 	thrd_exit(t_id);
 }
 
-TEST_CASE("thread test with new name/id checks", "[thrd][thrd_with_create_attrs]") {
-	thrd_t t0 = {};
-	thrd_t t1 = {};
+int handle_attribute_errors(ztdc_thrd_attr_kind attr_kind, int err, void* userdata) {
+	(void)userdata;
+	// check for the unrecognized attribute that triggers an error
+	ZTD_ASSERT(attr_kind == (ztdc_thrd_attr_kind)0x12345678);
+	ZTD_ASSERT(err == thrd_error);
+	// returning thrd_success means "it's okay, ignore the attribute error"
+	return thrd_success;
+}
 
-	ztdc_thrd_attr_c16name name_attr = { // format
-		ztdc_thrd_attr_kind_c16name, u"meow?!"
+int main(void) {
+	thrd_t t0 = { 0 };
+
+	ztdc_thrd_attr_c32name name_attr = { // format
+		.kind = ztdc_thrd_attr_kind_c32name,
+		.name = U"meow?!"
 	};
 	ztdc_thrd_attr_stack_size stack_size_attr = {
-		ztdc_thrd_attr_kind_stack_size,
-		1'024 * 16,
+		.kind = ztdc_thrd_attr_kind_stack_size,
+		.size = 1024 * 16,
 	};
-	struct ztdc_thrd_attr_priority {
+	const struct ztdc_thrd_attr_priority {
 		ztdc_thrd_attr_kind kind;
 		int priority;
 	} priority_attr = {
 		// some custom attribute or whatever
-		(ztdc_thrd_attr_kind)INT_MAX,
-		INT_MAX,
+		.kind     = (ztdc_thrd_attr_kind)0x12345678,
+		.priority = INT_MAX,
 	};
 
 	const ztdc_thrd_attr_kind* attrs[] = {
@@ -79,25 +79,11 @@ TEST_CASE("thread test with new name/id checks", "[thrd][thrd_with_create_attrs]
 		&name_attr.kind,
 	};
 
-	int t0_id = 1;
-	ztdc_thrd_create_attrs(&t0, thrd_main, &t0_id, ztdc_c_array_size(attrs), attrs);
-	name_attr.name = u"bark?!?!";
-	int t1_id      = 2;
-	auto err_func  = [&](const ztdc_thrd_attr_kind kind, int err) -> int {
-          REQUIRE(kind == priority_attr.kind);
-          REQUIRE(err == thrd_error);
-          return thrd_success;
-	};
-	auto err_func_trampoline = [](const ztdc_thrd_attr_kind kind, int err, void* userdata) -> int {
-		return (*((decltype(err_func)*)userdata))(kind, err);
-	};
-	ztdc_thrd_create_attrs_err(
-	     &t1, thrd_main, &t1_id, ztdc_c_array_size(attrs), attrs, err_func_trampoline, &err_func);
+	int t0_id = 0;
+	ztdc_thrd_create_attrs_err(&t0, thrd_main, &t0_id, ztdc_c_array_size(attrs), attrs, handle_attribute_errors, NULL);
 
 	int res0 = 0;
-	int res1 = 0;
 	thrd_join(t0, &res0);
-	thrd_join(t1, &res1);
-	REQUIRE(res0 == 1);
-	REQUIRE(res1 == 2);
+	ZTD_ASSERT(res0 == 0);
+	return 0;
 }

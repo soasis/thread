@@ -64,12 +64,6 @@
 typedef int(__thrd_start_t)(void*);
 typedef __thrd_start_t* thrd_start_t;
 
-typedef enum __mtx_type_t {
-	mtx_plain     = 0,
-	mtx_recursive = 1,
-	mtx_timed     = 2,
-} __mtx_type;
-
 typedef enum __thrd_error_code {
 	thrd_success  = 0,
 	thrd_nomem    = 1,
@@ -113,10 +107,17 @@ int thrd_sleep(const struct timespec* __duration, struct timespec* __remaining);
 
 #endif
 
+typedef int(ztdc_thrd_attr_err_func_t)(ztdc_thrd_attr_kind, int, void*);
+
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
 int ztdc_thrd_create_attrs(
-     thrd_t* __thr, thrd_start_t __func, void* __arg, size_t __attrs_size, ztdc_thrd_attr_kind** __attrs);
+     thrd_t* __thr, thrd_start_t __func, void* __arg, size_t __attrs_size, const ztdc_thrd_attr_kind** __attrs);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __arg, size_t __attrs_size,
+     const ztdc_thrd_attr_kind** __attrs, ztdc_thrd_attr_err_func_t* __attr_err_func, void* __attr_err_func_userdata);
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)

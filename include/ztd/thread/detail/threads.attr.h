@@ -44,8 +44,11 @@
 #include <stdbool.h>
 #endif
 
-typedef enum ztdc_thrd_attr_kind {
-	ztdc_thrd_attr_kind_name              = 0,
+typedef enum ztdc_thrd_attr_kind
+#if ZTD_IS_ON(ZTD_CXX) || (ZTD_IS_ON(ZTD_C) && __STDC_VERSION__ >= 202300L)
+: int_least32_t
+#endif
+{ ztdc_thrd_attr_kind_name                 = 0,
 	ztdc_thrd_attr_kind_name_sized        = 1,
 	ztdc_thrd_attr_kind_mcname            = 2,
 	ztdc_thrd_attr_kind_mcname_sized      = 3,
@@ -58,11 +61,10 @@ typedef enum ztdc_thrd_attr_kind {
 	ztdc_thrd_attr_kind_c32name           = 10,
 	ztdc_thrd_attr_kind_c32name_sized     = 11,
 	ztdc_thrd_attr_kind_stack_size        = 32,
-	ztdc_thrd_attr_kind_stack_storage     = 33,
-	ztdc_thrd_attr_kind_stack_guard_size  = 34,
 	ztdc_thrd_attr_kind_detached          = 256,
 	ztdc_thrd_attr_kind_impl_def          = 0xFFFF,
-	ztdc_thrd_attr_kind_impl_def_priority = 0x10000
+	ztdc_thrd_attr_kind__stack_storage    = 0x10020,
+	ztdc_thrd_attr_kind__stack_guard_size = 0x10021,
 } ztdc_thrd_attr_kind;
 
 // STANDARD THREAD ATTRIBUTES

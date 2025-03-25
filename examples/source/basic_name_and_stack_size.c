@@ -55,16 +55,16 @@ int main(void) {
 		.kind = ztdc_thrd_attr_kind_stack_size,
 		.size = 1024,
 	};
-	struct ztdc_thrd_attr_priority {
+	const struct ztdc_thrd_attr_priority {
 		ztdc_thrd_attr_kind kind;
 		int priority;
 	} priority_attr = {
 		// some custom attribute or whatever
-		.kind     = ztdc_thrd_attr_kind_impl_def_priority,
+		.kind     = 0x12345678,
 		.priority = INT_MAX,
 	};
 
-	ztdc_thrd_attr_kind* attrs[] = {
+	const ztdc_thrd_attr_kind* attrs[] = {
 		&priority_attr.kind,
 		&stack_size_attr.kind,
 		&name_attr.kind,
