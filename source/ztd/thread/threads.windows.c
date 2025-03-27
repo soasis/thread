@@ -38,14 +38,14 @@
 #include <ztd/idk/size.h>
 #include <ztd/cuneicode.h>
 
+#include <ztd/thread/detail/threads.implementation.h>
+
 #if ZTD_IS_ON(ZTD_CXX)
 #include <cstdlib>
 #else
 #include <stdlib.h>
 #include <stdbool.h>
 #endif
-
-#include <ztd/idk/detail/windows.h>
 
 static inline int __ztdc_win32_to_thread_error(int __code) {
 	switch (__code) {
@@ -214,40 +214,32 @@ inline static DWORD __ztdc_win32thread_trampoline(LPVOID __userdata) {
 	return __win32_res;
 }
 
-inline static int __ztdc_ignore_all_thrd_errors(ztdc_thrd_attr_kind __kind, int __err, void* __userdata) {
-	(void)__kind;
-	(void)__err;
-	(void)__userdata;
-	return thrd_success;
-}
-
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
-int ztdc_thrd_create_attrs(
-     thrd_t* __thr, thrd_start_t __func, void* __func_arg, size_t __attrs_size, const ztdc_thrd_attr_kind** __attrs) {
-	return ztdc_thrd_create_attrs_err(
-	     __thr, __func, __func_arg, __attrs_size, __attrs, __ztdc_ignore_all_thrd_errors, NULL);
-}
-
-ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
-ZTD_USE(ZTD_THREAD_API_LINKAGE)
-int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_arg, size_t __attrs_size,
-     const ztdc_thrd_attr_kind** __attrs, ztdc_thrd_attr_err_func_t* __attr_err_func, void* __attr_err_func_userdata) {
-	const thrd_t __original_thr     = *__thr;
-	ztdc_thrd_attr_kind __name_kind = ztdc_thrd_attr_kind_impl_def;
-	bool __name_set                 = false;
-	bool __immediate_detach         = false;
+int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_arg, size_t __attrs_size,
+     const ztdc_thrd_attr_kind** __attrs, ztdc_thrd_attr_err_func_t* __attr_err_func, void* __attr_err_func_arg) {
+	const thrd_t __original_thr                   = *__thr;
+	const ztdc_thrd_attr_kind* __name_attr_kind   = NULL;
+	const ztdc_thrd_attr_kind* __detach_attr_kind = NULL;
+	bool __name_set                               = false;
+	bool __immediate_detach                       = false;
 	wchar_t __name[1024 * 64]; // max size of Win32 thread name
 	const size_t __max_name_size = sizeof(__name) - 1;
 	ULONG __stack_size           = 1024 * 1000 * 2; // 2 mb default stack
 	__ztdc_win32thread_trampoline_t* __trampoline_userdata
 	     = (__ztdc_win32thread_trampoline_t*)malloc(sizeof(__ztdc_win32thread_trampoline_t));
+	if (__trampoline_userdata == NULL) {
+		return thrd_nomem;
+	}
 	__trampoline_userdata->__func     = __func;
 	__trampoline_userdata->__func_arg = __func_arg;
 
 	for (size_t __attr_index = 0; __attr_index < __attrs_size; ++__attr_index) {
 		const ztdc_thrd_attr_kind* __attr_kind = __attrs[__attr_index];
-		int __attr_err                         = thrd_success;
+		if (__attr_kind == NULL) {
+			continue;
+		}
+		int __attr_err = thrd_success;
 		switch (*__attr_kind) {
 		case ztdc_thrd_attr_kind_name_sized: {
 			ztdc_thrd_attr_name_sized* __attr = (ztdc_thrd_attr_name_sized*)__attr_kind;
@@ -257,7 +249,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 				memcpy(&__name[0], __attr->name, __copy_size);
 				__name[__copy_size] = 0;
 				__name_set          = true;
-				__name_kind         = *__attr_kind;
+				__name_attr_kind    = __attr_kind;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_mcname: {
@@ -278,9 +270,9 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 					}
 				}
 				else {
-					__name_ptr[0] = L'\0';
-					__name_set    = true;
-					__name_kind   = *__attr_kind;
+					__name_ptr[0]    = L'\0';
+					__name_set       = true;
+					__name_attr_kind = __attr_kind;
 				}
 			}
 		} break;
@@ -302,9 +294,9 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 					}
 				}
 				else {
-					__name_ptr[0] = L'\0';
-					__name_set    = true;
-					__name_kind   = *__attr_kind;
+					__name_ptr[0]    = L'\0';
+					__name_set       = true;
+					__name_attr_kind = __attr_kind;
 				}
 			}
 		} break;
@@ -316,7 +308,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 				memcpy(&__name[0], __attr->name, __copy_size);
 				__name[__copy_size] = 0;
 				__name_set          = true;
-				__name_kind         = *__attr_kind;
+				__name_attr_kind    = __attr_kind;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c8name: {
@@ -337,9 +329,9 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 					}
 				}
 				else {
-					__name_ptr[0] = L'\0';
-					__name_set    = true;
-					__name_kind   = *__attr_kind;
+					__name_ptr[0]    = L'\0';
+					__name_set       = true;
+					__name_attr_kind = __attr_kind;
 				}
 			}
 		} break;
@@ -361,9 +353,9 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 					}
 				}
 				else {
-					__name_ptr[0] = L'\0';
-					__name_set    = true;
-					__name_kind   = *__attr_kind;
+					__name_ptr[0]    = L'\0';
+					__name_set       = true;
+					__name_attr_kind = __attr_kind;
 				}
 			}
 		} break;
@@ -375,7 +367,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 				memcpy(&__name[0], __attr->name, __copy_size);
 				__name[__copy_size] = 0;
 				__name_set          = true;
-				__name_kind         = *__attr_kind;
+				__name_attr_kind    = __attr_kind;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c32name: {
@@ -396,9 +388,9 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 					}
 				}
 				else {
-					__name_ptr[0] = L'\0';
-					__name_set    = true;
-					__name_kind   = *__attr_kind;
+					__name_ptr[0]    = L'\0';
+					__name_set       = true;
+					__name_attr_kind = __attr_kind;
 				}
 			}
 		} break;
@@ -420,9 +412,9 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 					}
 				}
 				else {
-					__name_ptr[0] = L'\0';
-					__name_set    = true;
-					__name_kind   = *__attr_kind;
+					__name_ptr[0]    = L'\0';
+					__name_set       = true;
+					__name_attr_kind = __attr_kind;
 				}
 			}
 		} break;
@@ -433,6 +425,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 		case ztdc_thrd_attr_kind_detached: {
 			ztdc_thrd_attr_detached* __attr = (ztdc_thrd_attr_detached*)__attr_kind;
 			__immediate_detach              = __attr->detached;
+			__detach_attr_kind              = __attr_kind;
 		} break;
 		case ztdc_thrd_attr_kind_name:
 		case ztdc_thrd_attr_kind_mwcname:
@@ -446,7 +439,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 			break;
 		}
 		if (__attr_err != thrd_success) {
-			int __attr_err_res = __attr_err_func(*__attr_kind, __attr_err, __attr_err_func_userdata);
+			int __attr_err_res = __attr_err_func(__attr_kind, __attr_err, __attr_err_func_arg);
 			if (__attr_err_res != thrd_success) {
 				free(__trampoline_userdata);
 				return thrd_success;
@@ -513,7 +506,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 			break;
 		}
 		if (__attr_err != thrd_success) {
-			int __attr_err_res = __attr_err_func(*__attr_kind, __attr_err, __attr_err_func_userdata);
+			int __attr_err_res = __attr_err_func(__attr_kind, __attr_err, __attr_err_func_arg);
 			if (__attr_err_res != thrd_success) {
 				free(__trampoline_userdata);
 				CloseHandle(*__handle);
@@ -524,10 +517,10 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 	}
 	if (__name_set) {
 		HRESULT __name_res = SetThreadDescription(*__handle, __name);
-		if (FAILED(__name_res)) {
+		if (FAILED(__name_res) && __name_attr_kind) {
 			int __attr_err = __ztdc_hresult_to_thread_error(__name_res);
 			if (__attr_err != thrd_success) {
-				int __attr_err_res = __attr_err_func(__name_kind, __attr_err, __attr_err_func_userdata);
+				int __attr_err_res = __attr_err_func(__name_attr_kind, __attr_err, __attr_err_func_arg);
 				if (__attr_err_res != thrd_success) {
 					free(__trampoline_userdata);
 					CloseHandle(*__handle);
@@ -542,9 +535,8 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 	}
 	if (__immediate_detach) {
 		int __detach_res = thrd_detach(*__thr);
-		if (__detach_res != thrd_success) {
-			int __attr_err_res
-			     = __attr_err_func(ztdc_thrd_attr_kind_detached, __detach_res, __attr_err_func_userdata);
+		if (__detach_res != thrd_success && __detach_attr_kind != NULL) {
+			int __attr_err_res = __attr_err_func(__detach_attr_kind, __detach_res, __attr_err_func_arg);
 			if (__attr_err_res != thrd_success) {
 				free(__trampoline_userdata);
 				CloseHandle(*__handle);

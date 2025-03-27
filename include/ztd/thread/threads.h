@@ -37,7 +37,7 @@
 
 #include <ztd/idk/charN_t.h>
 
-#include <ztd/thread/detail/threads.attr.h>
+#include <ztd/thread/threads.attr.h>
 
 #if ZTD_IS_ON(ZTD_HEADER_THREADS_H)
 #if ZTD_IS_ON(ZTD_CXX) && ZTD_IS_ON(ZTD_HEADER_CTHREADS)
@@ -107,17 +107,65 @@ int thrd_sleep(const struct timespec* __duration, struct timespec* __remaining);
 
 #endif
 
-typedef int(ztdc_thrd_attr_err_func_t)(ztdc_thrd_attr_kind, int, void*);
+/// @brief A function that is called when an attribute is not honored by an implementation. The first parameter is the
+/// attribute passed into the function that does not work.
+///
+/// @param[in] __kind A pointer to the attribute's ztdc_thrd_attr_kind-typed first field.
+/// @param[in] __err The error that the implementation provided. It can be any thread error except `thrd_success`.
+/// @param[in] __userdata The user data passed in to the `thrd_create_arrs_err` function.
+///
+/// @remarks This function is always invoked on the same thread where the pointer to this function was provided for use
+/// in a thread creation function.
+///
+/// @returns The return value is a thread error. Returning thrd_success means to ignore the error. Any other return
+/// value means the function will stop and the thread creation will cease.
+typedef int(ztdc_thrd_attr_err_func_t)(const ztdc_thrd_attr_kind* __kind, int __err, void* __userdata);
+
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Starts a thread and configures that thread with the given thread attributes, if any. Any failure in the
+/// thread attributes is completely and totally ignored by default. Such errors can be caught by using
+/// ztdc_thrd_create_attrs_err.
+///
+/// @param __thr A pointer to the thread object that is populated with the information on success.
+/// @param __func The function to invoke if the thread is successfully created and ran.
+/// @param __arg The arg to provide to `__func` if it successfully starts.
+/// @param __attrs_size The size of the `__attrs` array.
+/// @param __attrs An array of pointers to the first member of either a standard or implementation-defined thread
+/// attribute structure that is at least `__attrs_size` large. If `__attrs_size` is 0, this can be a null pointer.
+/// Unknown attributes are skipped.
+///
+/// @return `thrd_success` on creation, and one of the thread error codes otherwise.
+///
+/// @remarks Equivalent to `ztdc_thrd_create_attrs_err(__thr, __func, __attrs_size, __attrs, NULL, NULL);`.
 int ztdc_thrd_create_attrs(
      thrd_t* __thr, thrd_start_t __func, void* __arg, size_t __attrs_size, const ztdc_thrd_attr_kind** __attrs);
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Starts a thread and configures that thread with the given thread attributes, if any. Any failure in the
+/// threads is completely and totally ignored.
+///
+/// @param[out] __thr A pointer to the thread object that is populated with the information on success.
+/// @param[in] __func The function to invoke if the thread is successfully created and ran.
+/// @param[in] __arg The arg to provide to `__func` if it successfully starts.
+/// @param[in] __attrs_size The size of the `__attrs` array.
+/// @param[in] __attrs An array of pointers to the first member of either a standard or implementation-defined thread
+/// attribute structure that is at least `__attrs_size` large. If `__attrs_size` is 0, this can be a null pointer.
+/// Unknown attributes are skipped.
+/// @param[in] __attr_err_func The function for handling when attributes cause errors. It is invoked on the same thread
+/// as the invocation of the overall ztdc_thrd_create_attr_err invocation. Returning `thrd_success` means that the error
+/// should be passed over and/or ignored for that given attribute. Otherwise, returning any other thread error results
+/// in the function returning with that error code. If it is `NULL`, then the implementation assumes that any failed
+/// application of a thread attribute should be passed over and ignored.
+/// @param[in] __attr_err_func_arg The arg to provide to the attribute error function if its ever invoked.
+///
+/// @return `thrd_success` on creation, and one of the thread error codes otherwise.
+///
+/// @remarks Equivalent to `ztdc_thrd_create_attrs_err(__thr, __func, __attrs_size, __attrs, NULL, NULL);`.
 int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __arg, size_t __attrs_size,
-     const ztdc_thrd_attr_kind** __attrs, ztdc_thrd_attr_err_func_t* __attr_err_func, void* __attr_err_func_userdata);
+     const ztdc_thrd_attr_kind** __attrs, ztdc_thrd_attr_err_func_t* __attr_err_func, void* __attr_err_func_arg);
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)

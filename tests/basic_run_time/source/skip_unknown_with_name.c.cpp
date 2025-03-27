@@ -86,13 +86,13 @@ TEST_CASE("thread test with new name/id checks", "[thrd][thrd_with_create_attrs]
 	int t1_id           = 2;
 	int err_invocations = 0;
 	name_attr.name      = u"bark?!?!";
-	auto err_func       = [&](const ztdc_thrd_attr_kind kind, int err) -> int {
-          REQUIRE(kind == priority_attr.kind);
+	auto err_func       = [&](const ztdc_thrd_attr_kind* kind, int err) -> int {
+          REQUIRE(*kind == priority_attr.kind);
           REQUIRE(err == thrd_error);
           ++err_invocations;
           return thrd_success;
 	};
-	auto err_func_trampoline = [](const ztdc_thrd_attr_kind kind, int err, void* userdata) -> int {
+	auto err_func_trampoline = [](const ztdc_thrd_attr_kind* kind, int err, void* userdata) -> int {
 		return (*((decltype(err_func)*)userdata))(kind, err);
 	};
 	int create_err1 = ztdc_thrd_create_attrs_err(

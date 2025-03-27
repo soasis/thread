@@ -44,10 +44,10 @@ inline static int thrd_main(void* arg) {
 	thrd_exit(t_id);
 }
 
-int handle_attribute_errors(ztdc_thrd_attr_kind attr_kind, int err, void* userdata) {
+int handle_attribute_errors(const ztdc_thrd_attr_kind* attr_kind, int err, void* userdata) {
 	(void)userdata;
 	// check for the unrecognized attribute that triggers an error
-	ZTD_ASSERT(attr_kind == (ztdc_thrd_attr_kind)0x12345678);
+	ZTD_ASSERT(*attr_kind == (ztdc_thrd_attr_kind)0x12345678);
 	ZTD_ASSERT(err == thrd_error);
 	// returning thrd_success means "it's okay, ignore the attribute error"
 	return thrd_success;

@@ -34,11 +34,13 @@
 
 #include <ztd/thread/threads.h>
 
+#include <ztd/thread/detail/threads.implementation.h>
+
 #include <ztd/idk/static_assert.h>
 #include <ztd/idk/null.h>
 #include <ztd/idk/size.h>
-#include <ztd/idk/detail/threads.pthreads.implementation.h>
 #include <ztd/cuneicode.h>
+
 
 #if ZTD_IS_ON(ZTD_HEADER_SCHED_H)
 #include <sched.h>
@@ -188,7 +190,7 @@ typedef struct __ztdc_pthread_trampoline_t {
 	atomic_bool* __sync_until;
 	atomic_bool* __sync_still_ok;
 	int* __sync_result;
-	ztdc_thrd_attr_kind* __sync_kind;
+	const ztdc_thrd_attr_kind** __sync_kind;
 #if ZTD_IS_ON(ZTD_THREAD_THREADS_NAME_SET_INSIDE)
 	char __name[ZTD_USE(ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE)];
 	bool __name_set;
@@ -358,12 +360,12 @@ inline static int __ztdc_pthread_prepare_name_trampoline(pthread_attr_t* __impl_
 inline static void* __ztdc_pthread_trampoline(void* __userdata) {
 	ztdc_static_assert(
 	     sizeof(void*) >= sizeof(int), "size of `int` is too large for a `void*`: trampoline will not work");
-	thrd_start_t __func              = NULL;
-	void* __func_arg                 = NULL;
-	int* __sync_result               = NULL;
-	atomic_bool* __sync_until        = NULL;
-	atomic_bool* __sync_still_ok     = NULL;
-	ztdc_thrd_attr_kind* __sync_kind = NULL;
+	thrd_start_t __func                     = NULL;
+	void* __func_arg                        = NULL;
+	int* __sync_result                      = NULL;
+	atomic_bool* __sync_until               = NULL;
+	atomic_bool* __sync_still_ok            = NULL;
+	const ztdc_thrd_attr_kind** __sync_kind = NULL;
 #if ZTD_IS_ON(ZTD_THREAD_THREADS_NAME_SET_INSIDE)
 	int __pre_err = thrd_success;
 #endif
@@ -434,38 +436,23 @@ inline static void* __ztdc_pthread_trampoline(void* __userdata) {
 	return __pthread_res;
 }
 
-inline static int __ztdc_ignore_all_thrd_errors(ztdc_thrd_attr_kind __kind, int __err, void* __userdata) {
-	(void)__kind;
-	(void)__err;
-	(void)__userdata;
-	return thrd_success;
-}
-
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
-int ztdc_thrd_create_attrs(
-     thrd_t* __thr, thrd_start_t __func, void* __func_arg, size_t __attrs_size, const ztdc_thrd_attr_kind** __attrs) {
-	return ztdc_thrd_create_attrs_err(
-	     __thr, __func, __func_arg, __attrs_size, __attrs, __ztdc_ignore_all_thrd_errors, NULL);
-}
-
-ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
-ZTD_USE(ZTD_THREAD_API_LINKAGE)
-int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_arg, size_t __attrs_size,
-     const ztdc_thrd_attr_kind** __attrs, ztdc_thrd_attr_err_func_t* __attr_err_func, void* __attr_err_func_userdata) {
+int __ztdc_pthreads_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_arg, size_t __attrs_size,
+     const ztdc_thrd_attr_kind** __attrs, ztdc_thrd_attr_err_func_t* __attr_err_func, void* __attr_err_func_arg) {
 #if ZTD_IS_ON(ZTD_HEADER_THREADS_H)
 	ztdc_static_assert(sizeof(thrd_t) >= sizeof(pthread_t), "thrd_t is not the same size as pthread_t");
 #endif
-	if (!__func) {
-		return thrd_success;
-	}
 	int __sync_result = thrd_success;
 	__ztdc_pthread_trampoline_t* __trampoline_userdata
 	     = (__ztdc_pthread_trampoline_t*)malloc(sizeof(__ztdc_pthread_trampoline_t));
+	if (__trampoline_userdata == NULL) {
+		return thrd_nomem;
+	}
 	__trampoline_userdata->__func     = __func;
 	__trampoline_userdata->__func_arg = __func_arg;
 #if ZTD_IS_ON(ZTD_THREAD_THREADS_REQUIRE_SYNCHRONIZATION)
-	ztdc_thrd_attr_kind __sync_kind        = ztdc_thrd_attr_kind_impl_def;
+	const ztdc_thrd_attr_kind* __sync_kind = NULL;
 	atomic_bool __sync_until               = true;
 	atomic_bool __sync_still_ok            = true;
 	__trampoline_userdata->__sync_until    = &__sync_until;
@@ -481,7 +468,10 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 	}
 	for (size_t __attr_index = 0; __attr_index < __attrs_size; ++__attr_index) {
 		const ztdc_thrd_attr_kind* __attr_kind = __attrs[__attr_index];
-		int __attr_err                         = thrd_success;
+		if (__attr_kind == NULL) {
+			continue;
+		}
+		int __attr_err = thrd_success;
 		switch (*__attr_kind) {
 		case ztdc_thrd_attr_kind_name: {
 			ztdc_thrd_attr_name* __attr = (ztdc_thrd_attr_name*)__attr_kind;
@@ -489,7 +479,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 				const size_t __name_size = ztdc_c_string_ptr_size((const char*)__attr->name);
 				__attr_err  = __ztdc_pthread_prepare_name_trampoline(&__impl_attrs, __trampoline_userdata,
 				      __name_size, (const char*)__attr->name, __ztdc_encoding_name_none);
-				__sync_kind = *__attr_kind;
+				__sync_kind = __attr_kind;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_name_sized: {
@@ -498,7 +488,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 				const size_t __name_size = __attr->size;
 				__attr_err  = __ztdc_pthread_prepare_name_trampoline(&__impl_attrs, __trampoline_userdata,
 				      __name_size, (const char*)__attr->name, __ztdc_encoding_name_none);
-				__sync_kind = *__attr_kind;
+				__sync_kind = __attr_kind;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_mcname: {
@@ -507,7 +497,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 				const size_t __name_size = ztdc_c_string_ptr_size(__attr->name);
 				__attr_err               = __ztdc_pthread_prepare_name_trampoline(
                          &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_mc);
-				__sync_kind = *__attr_kind;
+				__sync_kind = __attr_kind;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_mcname_sized: {
@@ -516,7 +506,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 				const size_t __name_size = __attr->size;
 				__attr_err               = __ztdc_pthread_prepare_name_trampoline(
                          &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_mc);
-				__sync_kind = *__attr_kind;
+				__sync_kind = __attr_kind;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_mwcname: {
@@ -525,7 +515,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 				const size_t __name_size = ztdc_c_string_ptr_size(__attr->name);
 				__attr_err               = __ztdc_pthread_prepare_name_trampoline(
                          &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_mwc);
-				__sync_kind = *__attr_kind;
+				__sync_kind = __attr_kind;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_mwcname_sized: {
@@ -534,7 +524,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 				const size_t __name_size = __attr->size;
 				__attr_err               = __ztdc_pthread_prepare_name_trampoline(
                          &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_mwc);
-				__sync_kind = *__attr_kind;
+				__sync_kind = __attr_kind;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c8name: {
@@ -543,7 +533,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 				const size_t __name_size = ztdc_c_string_ptr_size(__attr->name);
 				__attr_err               = __ztdc_pthread_prepare_name_trampoline(
                          &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_c8);
-				__sync_kind = *__attr_kind;
+				__sync_kind = __attr_kind;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c8name_sized: {
@@ -552,7 +542,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 				const size_t __name_size = __attr->size;
 				__attr_err               = __ztdc_pthread_prepare_name_trampoline(
                          &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_c8);
-				__sync_kind = *__attr_kind;
+				__sync_kind = __attr_kind;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c16name: {
@@ -561,7 +551,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 				const size_t __name_size = ztdc_c_string_ptr_size(__attr->name);
 				__attr_err               = __ztdc_pthread_prepare_name_trampoline(
                          &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_c16);
-				__sync_kind = *__attr_kind;
+				__sync_kind = __attr_kind;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c16name_sized: {
@@ -570,7 +560,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 				const size_t __name_size = __attr->size;
 				__attr_err               = __ztdc_pthread_prepare_name_trampoline(
                          &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_c16);
-				__sync_kind = *__attr_kind;
+				__sync_kind = __attr_kind;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c32name: {
@@ -579,7 +569,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 				const size_t __name_size = ztdc_c_string_ptr_size(__attr->name);
 				__attr_err               = __ztdc_pthread_prepare_name_trampoline(
                          &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_c32);
-				__sync_kind = *__attr_kind;
+				__sync_kind = __attr_kind;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_c32name_sized: {
@@ -588,7 +578,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 				const size_t __name_size = __attr->size;
 				__attr_err               = __ztdc_pthread_prepare_name_trampoline(
                          &__impl_attrs, __trampoline_userdata, __name_size, __attr->name, __ztdc_encoding_name_c32);
-				__sync_kind = *__attr_kind;
+				__sync_kind = __attr_kind;
 			}
 		} break;
 		case ztdc_thrd_attr_kind_stack_size: {
@@ -601,12 +591,12 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
                     &__impl_attrs, __attr->detached ? PTHREAD_CREATE_DETACHED : PTHREAD_CREATE_JOINABLE));
 		} break;
 		case ztdc_thrd_attr_kind__stack_storage: {
-			ztdc_thrd_attr_stack_storage* __attr = (ztdc_thrd_attr_stack_storage*)__attr_kind;
-			__attr_err                           = __ztdc_pthread_to_thread_error(
+			ztdc_thrd_attr__stack_storage* __attr = (ztdc_thrd_attr__stack_storage*)__attr_kind;
+			__attr_err                            = __ztdc_pthread_to_thread_error(
                     pthread_attr_setstack(&__impl_attrs, __attr->buffer, __attr->size));
 		} break;
 		case ztdc_thrd_attr_kind__stack_guard_size: {
-			ztdc_thrd_attr_stack_guard_size* __attr = (ztdc_thrd_attr_stack_guard_size*)__attr_kind;
+			ztdc_thrd_attr__stack_guard_size* __attr = (ztdc_thrd_attr__stack_guard_size*)__attr_kind;
 			__attr_err = __ztdc_pthread_to_thread_error(pthread_attr_setguardsize(&__impl_attrs, __attr->size));
 		} break;
 		default:
@@ -616,7 +606,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 		}
 		if (__attr_err != thrd_success) {
 			// process errors through the error function
-			int __attr_err_res = __attr_err_func(*__attr_kind, __attr_err, __attr_err_func_userdata);
+			int __attr_err_res = __attr_err_func(__attr_kind, __attr_err, __attr_err_func_arg);
 			if (__attr_err_res != thrd_success) {
 				int __impl_attr_destroy_res = pthread_attr_destroy(&__impl_attrs);
 				(void)__impl_attr_destroy_res;
@@ -647,9 +637,8 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 	// return any from-thread failures and bail if necessary
 	int __post_thread_start_results = __sync_result;
 	if (__post_thread_start_results != thrd_success) {
-		__post_thread_start_results
-		     = __attr_err_func(__sync_kind, __post_thread_start_results, __attr_err_func_userdata);
-		__sync_result = __post_thread_start_results;
+		__post_thread_start_results = __attr_err_func(__sync_kind, __post_thread_start_results, __attr_err_func_arg);
+		__sync_result               = __post_thread_start_results;
 		// send back the result to the thread so it knows to either go or quit
 		atomic_store(&__sync_still_ok, false);
 		if (__post_thread_start_results != thrd_success) {

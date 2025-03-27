@@ -28,18 +28,6 @@
 //
 // ============================================================================ //
 
-#pragma once
-
-#ifndef ZTD_THREAD_SOURCE_DETAIL_THREADS_PTHREADS_IMPLEMENTATION_H
-#define ZTD_THREAD_SOURCE_DETAIL_THREADS_PTHREADS_IMPLEMENTATION_H
-
-#include <ztd/thread/version.h>
-
-#include <ztd/thread/threads.h>
-
-#include <pthread.h>
-#if ZTD_IS_ON(ZTD_HEADER_PTHREAD_NP_H)
-#include <pthread_np.h>
-#endif
-
-#endif
+$(document).ready(function () {
+	$("em.property > span.pre:contains('inline')").hide();
+});
