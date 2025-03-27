@@ -40,7 +40,7 @@ There is currently no ``std::thread``/C++ integration, as it is much harder to c
 Who Is This Library For?
 ------------------------
 
-Anyone who wants a better way to specify things like the name of a stack size of a thread. Additions and more improvements welcome within the ``ztdc_thrd_attr_*`` types and enumerations!
+Anyone who wants a better way to specify things like the name, or the stack size, of a thread. Additions and more improvements welcome within the ``ztdc_thrd_attr_*`` types and enumerations, implementation-specific or not!
 
 .. toctree::
 	:maxdepth: 1
