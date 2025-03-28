@@ -97,7 +97,7 @@ ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
 ztdc_thrd_id_t ztdc_thrd_get_id(thrd_t __thr) {
 #if ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
-	return *__ztdc_win32_handle_id(&__thr)
+	return *__ztdc_win32_handle_id(&__thr);
 #elif ZTD_IS_ON(ZTD_PLATFORM_PTHREADS)
 	return (ztdc_thrd_id_t)__thr;
 #else
