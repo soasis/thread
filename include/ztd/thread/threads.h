@@ -175,11 +175,13 @@ typedef
 #if ZTD_IS_OFF(ZTD_HEADER_THREADS_H)
      pthread_t
 #else
-#if ZTD_IS_ON(ZTD_PLATFORM_MACOS)
+#if ZTD_IS_ON(ZTD_PLATFORM_MAC_OS)
      void*
 #else
      unsigned long
 #endif
+#endif
+#else
 #error "Unknown platform."
 #endif
           __ztdc_thrd_native_handle_t;
