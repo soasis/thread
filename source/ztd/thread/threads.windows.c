@@ -82,7 +82,9 @@ int __ztdc_xthreads_to_thread_error(int __code) {
 	return __code;
 }
 
-static inline void** __ztdc_win32_handle_ptr(thrd_t* __thr) {
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_INTERNAL_LINKAGE)
+void** __ztdc_win32_handle_ptr(thrd_t* __thr) {
 #if ZTD_IS_ON(ZTD_HEADER_THREADS_H)
 	return &__thr->_Handle;
 #elif ZTD_IS_ON(ZTD_HEADER_XTHREADS_H)
@@ -92,7 +94,9 @@ static inline void** __ztdc_win32_handle_ptr(thrd_t* __thr) {
 #endif
 }
 
-static inline uint32_t* __ztdc_win32_handle_id(thrd_t* __thr) {
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_INTERNAL_LINKAGE)
+uint32_t* __ztdc_win32_handle_id(thrd_t* __thr) {
 #if ZTD_IS_ON(ZTD_HEADER_THREADS_H)
 	return &__thr->_Tid;
 #elif ZTD_IS_ON(ZTD_HEADER_XTHREADS_H)

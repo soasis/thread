@@ -35,6 +35,24 @@ There's only a limited number of APIs to document, as the rest is covered by the
 
 
 
+``ztdc_thrd_native_handle_t`` type and function
+-----------------------------------------------
+
+.. doxygentypedef:: ztdc_thrd_native_handle_t
+
+.. doxygenfunction:: ztdc_thrd_get_native_handle
+
+
+
+``ztdc_thrd_id_t`` type and function
+------------------------------------
+
+.. doxygentypedef:: ztdc_thrd_id_t
+
+.. doxygenfunction:: ztdc_thrd_get_id
+
+
+
 ``ztdc_thrd_attr_err_func_t`` function type
 -------------------------------------------
 

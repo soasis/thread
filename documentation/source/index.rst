@@ -47,7 +47,8 @@ Anyone who wants a better way to specify things like the name, or the stack size
 	:caption: Contents:
 
 	api
-	design
+	design/core
+	design/alternatives
 	license
 
 

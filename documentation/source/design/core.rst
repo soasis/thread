@@ -28,8 +28,8 @@
 ..
 .. =============================================================================>
 
-Design
-======
+Core Design
+===========
 
 The design of this library is centered around 4 things:
 
@@ -45,11 +45,11 @@ Starting from the beginning, it is necessary to talk about the enumeration and t
 Extensibility and Future-Proofed API
 ------------------------------------
 
-One of the biggest issues uncovered in previous attempts to fix this problem in C (`N2419 <https://www.open-std.org/JTC1/SC22/WG14/www/docs/n2419.htm>`_) and C++ (`P2019 <https://wg21.link/p2019>`_, `P3072 <https://wg21.link/p3072>`_, and `P3022 <https://wg21.link/p3022>`_) was the lack of extensibility and the lack of future-proofing against ABI issues. At the Minneapolis 2024 WG14 meeting, a vote was taken to allow undefined behavior for `strftime` and the broken-down time structures (see `N3272, Option 1 <https://www.open-std.org/JTC1/SC22/WG14/www/docs/n3272.htm>`_) due to the fact that it would be an ABI break in some places where users were directly copying structures. Our current interfaces do not have a great track record when they need to be updated, upgraded, or maintained.
+One of the biggest issues uncovered in previous attempts to fix this problem in C (`N2419 <https://www.open-std.org/JTC1/SC22/WG14/www/docs/n2419.htm>`_) and C++ (`P0320 <https://wg21.link/P0320>`_, `P2019 <https://wg21.link/p2019>`_, `P3072 <https://wg21.link/p3072>`_, and `P3022 <https://wg21.link/p3022>`_) was the lack of extensibility and the lack of future-proofing against ABI issues. At the Minneapolis 2024 WG14 meeting, a vote was taken to allow undefined behavior for ``strftime`` and the broken-down time structures (see `N3272, Option 1 <https://www.open-std.org/JTC1/SC22/WG14/www/docs/n3272.htm>`_) due to the fact that it would be an ABI break in some places where users were directly copying structures. Our current interfaces do not have a great track record when they need to be updated, upgraded, or maintained.
 
 Therefore, there is a need for flexibility in an interface which we expect to change over time.
 
-One way to do this is with Windows-style `Ex` suffixes on functions and structures, alongside some built-in checking by having the first or last member of a structure be a `cbSize` member meant to be filled in by the `sizeof(...)` of the structure it's contained within. However, a good portion of the C community (Linux and BSD-derivates, in particular) would likely riot over such a style of interface, even if it is common place in Win32-style APIs. Unfortunately, Linux's and BSD's typical approach to this problem is to simply write the direct struct and then hem & haw for decades over improvements, providing entirely new functions with new structures or just shrugging their shoulders and leaving every individual vendor and user to fend for themselves when the day comes that new interfaces are needed.
+One way to do this is with Windows-style ``Ex`` suffixes on functions and structures, alongside some built-in checking by having the first or last member of a structure be a `cbSize` member meant to be filled in by the `sizeof(...)` of the structure it's contained within. However, a good portion of the C community (Linux and BSD-derivates, in particular) would likely riot over such a style of interface, even if it is common place in Win32-style APIs. Unfortunately, Linux's and BSD's typical approach to this problem is to simply write the direct struct and then hem & haw for decades over improvements, providing entirely new functions with new structures or just shrugging their shoulders and leaving every individual vendor and user to fend for themselves when the day comes that new interfaces are needed.
 
 A way to resolve these concerns is to combine the slimness of the Linux API but the ability to have multiple structures like the Win32 APIs but without creating new entry points. But, that poses an additional problem: how do we keep a unified interface that can handle multiple different structures (multiple different thread attributes) now and into the future without getting caught on ABI issues that force us to make such improvements Undefined Behavior, as in `N3272 <https://www.open-std.org/JTC1/SC22/WG14/www/docs/n3272.htm>`_?
 
@@ -62,7 +62,7 @@ The solution for this is to recognize 2 different important qualities we need:
 - we need a tag to identify a structure for both a user and an implementation to recognize a given thread attribute;
 - and, we need a standards-compliant way of taking what will probably be a type-erased pointer to a structure and casting to the right thread attribute.
 
-This would bring us to the first design, a `void*` plus `attr_kind` sort of tagging system:
+This would bring us to the first design, a ``void*`` plus ``attr_kind`` sort of tagging system:
 
 .. code-block:: c
 	:linenos:
@@ -113,11 +113,11 @@ This would bring us to the first design, a `void*` plus `attr_kind` sort of tagg
 		return 0;
 	}
 
-One would then take a `tag_and_attr[]` -- an array of such objects -- to denote which actions to take. But this has obvious disadvantages native to C as a language: it is completely type unsafe. `void*` can point to literally anything. This isn't helpful, and makes the interface less compelling and competitive against a C++-style implementation which uses templates to not only not pay for any extra code but can treat each attribute completely separately and properly. This is where a rule in C and C++ comes in to save us:
+One would then take a ``tag_and_attr[]`` -- an array of such objects -- to denote which actions to take. But this has obvious disadvantages native to C as a language: it is completely type unsafe. ``void*`` can point to literally anything. This isn't helpful, and makes the interface less compelling and competitive against a C++-style implementation which uses templates to not only not pay for any extra code but can treat each attribute completely separately and properly. This is where a rule in C and C++ comes in to save us:
 
 	A pointer to a structure object, suitably converted, points to its initial member (or if that member is a bit-field, then to the unit in which it resides), and vice versa. There can be unnamed padding within a structure object, but not at its beginning.
 
-We can (slightly) improve type safety by noting that, so long as we have a `attr_foo` structure, if the first member is an `attr_kind` type, a pointer to that `attr_kind` will also serve as the attribute structure's overall pointer. That means we can flatten our `tag_and_attr` structure to save on a very tiny bit of space, while improving type safety by putting the attribute kind into the structure itself rather than as a separate piece:
+We can (slightly) improve type safety by noting that, so long as we have a ``attr_foo`` structure, if the first member is an ``attr_kind`` type, a pointer to that ``attr_kind`` will also serve as the attribute structure's overall pointer. That means we can flatten our ``tag_and_attr`` structure to save on a very tiny bit of space, while improving type safety by putting the attribute kind into the structure itself rather than as a separate piece:
 
 .. code-block:: c
 	:linenos:
@@ -166,7 +166,7 @@ We can (slightly) improve type safety by noting that, so long as we have a `attr
 		return 0;
 	}
 
-This saves us having to specify the `kind` with every entry and moves it instead to the initialization of the attribute itself. It also makes it so rather than taking a pointer to *literally anything*, it is instead focused on a narrow and specific set of values. Safety can further be increased with a set of creation functions that can't make the mistake of providing the wrong ``attr_kind`` and hardocding it in. (C++ would solve this problem by baking it into the type's constructor.) Because of the rule about the first element of a struct having an identical address as the whole structure, the following becomes the proper way to cast from each `attr_kind` to its respective attribute type:
+This saves us having to specify the ``kind`` with every entry and moves it instead to the initialization of the attribute itself. It also makes it so rather than taking a pointer to *literally anything*, it is instead focused on a narrow and specific set of values. Safety can further be increased with a set of creation functions that can't make the mistake of providing the wrong ``attr_kind`` and hardocding it in. (C++ would solve this problem by baking it into the type's constructor.) Because of the rule about the first element of a struct having an identical address as the whole structure, the following becomes the proper way to cast from each ``attr_kind`` to its respective attribute type:
 
 .. code-block:: c
 	:linenos:
@@ -195,17 +195,7 @@ This saves us having to specify the `kind` with every entry and moves it instead
 		return do_some_success;
 	}
 
-This forms the basis for :cpp:func:`ztdc_thrd_create_attrs`. Unknown attributes that are not recognized by ``do_something`` (i.e., by :cpp:func:`ztdc_thrd_create_attrs`) are simply passed over. The others are processed in the function and the implementation can react to them. This allows for implementations to accept more structures in the future, so long as a new tag can be defined. The enumeration's underlying type is `int` right now, and so on typical implementations this can hold about 2 billion values (if they're all positive values). There's no way either the standard or implementations will ever fill all 2 billion of those values and have a structure to go along with it.
-
-
-Are There Other Designs?
-++++++++++++++++++++++++
-
-Given the nature of the problem space -- namely, that once a thread is created it is usually immediately ran (at least in POSIX threads, Win32 threads can be created in a suspended state) -- other approaches are insufficient for the problem space.
-
-One approach frequently mentioned is using a function pointer which is given a `thrd_t*` to act on during the creation. This is not helpful. There's also the problem of niche platform quirks, such as only being able to set the name from the thread of invocation itself (MacOS/Darwin), only being able to detach a thread from outside itself and not when it is the current thread of invocation (Win32), and similar issues. Just trying to provide a `thrd_t` -- or its `native_handle()` equivalent -- "during creation" is unsuitable to solve the problem, and specifying a function-based approach to adding new attributes or modifying it will either present the information when it's too late or not be able to appropriate set the properties of that thread from its point of invocation. By providing pointers to structures that the implementation has access to just before and immediately after thread creation, the implementation -- as both :cpp:func:`ztdc_thrd_create_attrs` and :cpp:func:`ztdc_thrd_create_attrs_err` do -- can decide whether they need to transport any information to the thread of invocation to invoke their platform-specific behaviors, or if they can do it at the moment of / after thread creation within those functions.
-
-The fact that the implementation must decide means that users might be left out in the cold with an exceptionally poor quality of implementation, but that is when users should either aggressively negotiate their contracts or open feature requests / bug reports against a given library for not providing a given feature. In the case of ``ztd.thread``, we will provide features insofar as is possible and capable and hope this improves the C standard.
+This forms the basis for :cpp:func:`ztdc_thrd_create_attrs`. Unknown attributes that are not recognized by ``do_something`` (i.e., by :cpp:func:`ztdc_thrd_create_attrs`) are simply passed over. The others are processed in the function and the implementation can react to them. This allows for implementations to accept more structures in the future, so long as a new tag can be defined. The enumeration's underlying type is ``int`` right now, and so on typical implementations this can hold about 2 billion values (if they're all positive values). There's no way either the standard or implementations will ever fill all 2 billion of those values and have a structure to go along with it.
 
 
 

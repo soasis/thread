@@ -39,6 +39,12 @@
 
 #include <ztd/thread/threads.attr.h>
 
+#if ZTD_IS_ON(ZTD_CXX)
+#include <cstdint>
+#else
+#include <stdint.h>
+#endif
+
 #if ZTD_IS_ON(ZTD_HEADER_THREADS_H)
 #if ZTD_IS_ON(ZTD_CXX) && ZTD_IS_ON(ZTD_HEADER_CTHREADS)
 #include <cthreads>
@@ -54,12 +60,6 @@
 #endif
 
 #if ZTD_IS_OFF(ZTD_HEADER_THREADS_H)
-
-#if ZTD_IS_ON(ZTD_CXX)
-#include <cstdint>
-#else
-#include <stdint.h>
-#endif
 
 typedef int(__thrd_start_t)(void*);
 typedef __thrd_start_t* thrd_start_t;
@@ -166,6 +166,53 @@ ZTD_USE(ZTD_THREAD_API_LINKAGE)
 /// @remarks Equivalent to `ztdc_thrd_create_attrs_err(__thr, __func, __attrs_size, __attrs, NULL, NULL);`.
 int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __arg, size_t __attrs_size,
      const ztdc_thrd_attr_kind** __attrs, ztdc_thrd_attr_err_func_t* __attr_err_func, void* __attr_err_func_arg);
+
+
+typedef
+#if ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
+     void*
+#else
+     pthread_t
+#endif
+          __ztdc_thrd_native_handle_t;
+
+typedef
+#if ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
+     uint32_t
+#else
+     uintptr_t
+#endif
+          __ztdc_thrd_id_t;
+
+/// @brief The native handle type for this platform.
+typedef __ztdc_thrd_native_handle_t ztdc_thrd_native_handle_t;
+
+/// @brief The native id type for this platform.
+typedef __ztdc_thrd_id_t ztdc_thrd_id_t;
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Returns the native handle out of `__thr`.
+///
+/// @param[in] __thr The thread to get the native, platform-specific handle for.
+///
+/// @return The native "handle" object which represents `__thr`. May be an invalid sentinel type if `__thr` is not the
+/// original object created by the thread or retrieved by `thrd_current()`.
+ztdc_thrd_native_handle_t ztdc_thrd_get_native_handle(thrd_t __thr);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Returns the native id out of `__thr`.
+///
+/// @param[in] __thr The thread to get the native, platform-specific ID for.
+///
+/// @return The native "ID" object which represents `__thr`. May be an invalid sentinel type if `__thr` is not the
+/// original object created by the thread.
+ztdc_thrd_id_t ztdc_thrd_get_id(thrd_t __thr);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_get_mcname(thrd_t __thr, size_t __buffer_size, char* __buffer);
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
