@@ -171,8 +171,16 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __arg, 
 typedef
 #if ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
      void*
-#else
+#elif ZTD_IS_ON(ZTD_PLATFORM_PTHREADS)
+#if ZTD_IS_OFF(ZTD_HEADER_THREADS_H)
      pthread_t
+#else
+#if ZTD_IS_ON(ZTD_PLATFORM_MACOS)
+     void*
+#else
+     unsigned long
+#endif
+#error "Unknown platform."
 #endif
           __ztdc_thrd_native_handle_t;
 
