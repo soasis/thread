@@ -274,7 +274,7 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 					}
 				}
 				else {
-					__name_ptr[0]    = L'\0';
+					__name_ptr[0]    = 0;
 					__name_set       = true;
 					__name_attr_kind = __attr_kind;
 				}
@@ -298,7 +298,7 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 					}
 				}
 				else {
-					__name_ptr[0]    = L'\0';
+					__name_ptr[0]    = 0;
 					__name_set       = true;
 					__name_attr_kind = __attr_kind;
 				}
@@ -333,7 +333,7 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 					}
 				}
 				else {
-					__name_ptr[0]    = L'\0';
+					__name_ptr[0]    = 0;
 					__name_set       = true;
 					__name_attr_kind = __attr_kind;
 				}
@@ -357,7 +357,7 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 					}
 				}
 				else {
-					__name_ptr[0]    = L'\0';
+					__name_ptr[0]    = 0;
 					__name_set       = true;
 					__name_attr_kind = __attr_kind;
 				}
@@ -392,7 +392,7 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 					}
 				}
 				else {
-					__name_ptr[0]    = L'\0';
+					__name_ptr[0]    = 0;
 					__name_set       = true;
 					__name_attr_kind = __attr_kind;
 				}
@@ -416,7 +416,7 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 					}
 				}
 				else {
-					__name_ptr[0]    = L'\0';
+					__name_ptr[0]    = 0;
 					__name_set       = true;
 					__name_attr_kind = __attr_kind;
 				}
@@ -578,62 +578,6 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 	}
 	return thrd_success;
 }
-
-ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
-ZTD_USE(ZTD_THREAD_API_LINKAGE)
-int ztdc_thrd_get_name(thrd_t __thr, size_t __buffer_size, void* __buffer) {
-	if (__buffer == NULL) {
-		return thrd_success;
-	}
-	if (__buffer_size < 2) {
-		if (__buffer_size == 0) {
-			return thrd_success;
-		}
-		((unsigned char*)__buffer)[0] = '\0';
-		return thrd_success;
-	}
-	DWORD __id                = *__ztdc_win32_handle_id(&__thr);
-	DWORD __current_thread_id = GetCurrentThreadId();
-	HANDLE __handle           = NULL;
-	if (__id != __current_thread_id) {
-		__handle = OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, __id);
-	}
-	else {
-		__handle = GetCurrentThread();
-	}
-	if (__handle == NULL) {
-		return thrd_error;
-	}
-	WCHAR* __impl_wide_str = NULL;
-	HRESULT __res          = GetThreadDescription(GetCurrentThread(), &__impl_wide_str);
-	if (__id != __current_thread_id) {
-		if (CloseHandle(__handle) == 0) {
-			if (SUCCEEDED(__res)) {
-				LocalFree(__impl_wide_str);
-			}
-			return thrd_error;
-		}
-	}
-	if (FAILED(__res)) {
-		return thrd_error;
-	}
-	size_t __impl_wide_str_size = ztdc_c_string_ptr_size(__impl_wide_str);
-	if (__impl_wide_str_size == 0) {
-		LocalFree(__impl_wide_str);
-		((unsigned char*)__buffer)[0] = 0;
-		return thrd_success;
-	}
-	const size_t __impl_wide_str_bytesize = (__impl_wide_str_size) * sizeof(ztd_char16_t);
-	const size_t __buffer_bytesize        = (__buffer_size - 1) * sizeof(ztd_char8_t);
-	const size_t __copy_size
-	     = __buffer_bytesize > __impl_wide_str_bytesize ? __impl_wide_str_bytesize : __buffer_bytesize;
-	memcpy(__buffer, __impl_wide_str, __copy_size);
-	((unsigned char*)__buffer)[__copy_size / sizeof(unsigned char)] = 0;
-	LocalFree(__impl_wide_str);
-	return thrd_success;
-}
-
-
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
@@ -921,6 +865,147 @@ int ztdc_thrd_get_c32name(thrd_t __thr, size_t __buffer_size, ztd_char32_t* __bu
 	default:
 		return thrd_nomem;
 	}
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_mwcname(thrd_t __thr, const ztd_wchar_t* __buffer) {
+	if (!__buffer) {
+		return thrd_success;
+	}
+	HRESULT __name_res = SetThreadDescription(*__ztdc_win32_handle_ptr(&__thr), (PCWSTR)__buffer);
+	if (FAILED(__name_res)) {
+		return __ztdc_hresult_to_thread_error(__name_res);
+	}
+	return thrd_success;
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_c16name(thrd_t __thr, const ztd_char16_t* __buffer) {
+	if (!__buffer) {
+		return thrd_success;
+	}
+	HRESULT __name_res = SetThreadDescription(*__ztdc_win32_handle_ptr(&__thr), (PCWSTR)__buffer);
+	if (FAILED(__name_res)) {
+		return __ztdc_hresult_to_thread_error(__name_res);
+	}
+	return thrd_success;
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_mcname_sized(thrd_t __thr, size_t __buffer_size, const ztd_char_t* __buffer) {
+	if (!__buffer) {
+		return thrd_success;
+	}
+	if (__buffer_size < 1u) {
+		return thrd_success;
+	}
+	enum { DESC_MAX_SIZE = 1024 * 64 };
+	ztd_wchar_t __tmp_buffer[DESC_MAX_SIZE + 1];
+	ztd_wchar_t* __tmp_buffer_ptr = __tmp_buffer;
+	size_t __tmp_buffer_size      = DESC_MAX_SIZE;
+	cnc_mcerr __conv_err          = cnc_mcntomwcn(&__buffer_size, &__buffer, &__tmp_buffer_size, &__tmp_buffer_ptr);
+	if (__conv_err != cnc_mcerr_ok) {
+		return __conv_err == cnc_mcerr_incomplete_input ? thrd_nomem : thrd_error;
+	}
+	__tmp_buffer_ptr[0] = 0;
+	return ztdc_thrd_set_mwcname(__thr, __tmp_buffer);
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_mwcname_sized(thrd_t __thr, size_t __buffer_size, const ztd_wchar_t* __buffer) {
+	if (!__buffer) {
+		return thrd_success;
+	}
+	if (__buffer_size < 1u) {
+		return thrd_success;
+	}
+	if (ztdc_c_string_ptr_size_limit_wc(__buffer_size, __buffer) == __buffer_size
+	     && __buffer[__buffer_size] == (ztd_wchar_t)0) {
+		// it is of the right size, has no intermediate null terminators, and is null-terminated properly
+		return ztdc_thrd_set_mwcname(__thr, __buffer);
+	}
+	enum { DESC_MAX_SIZE = 1024 * 64 };
+	if (__buffer_size > DESC_MAX_SIZE) {
+		return thrd_nomem;
+	}
+	// otherwise, we need a temporary buffer
+	ztd_wchar_t __tmp_buffer[DESC_MAX_SIZE + 1];
+	const size_t __copy_bytesize = __buffer_size * sizeof(ztd_wchar_t);
+	memcpy(__tmp_buffer, __buffer, __copy_bytesize);
+	__tmp_buffer[__buffer_size] = 0;
+	return ztdc_thrd_set_mwcname(__thr, __tmp_buffer);
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_c8name_sized(thrd_t __thr, size_t __buffer_size, const ztd_char8_t* __buffer) {
+	if (!__buffer) {
+		return thrd_success;
+	}
+	if (__buffer_size < 1u) {
+		return thrd_success;
+	}
+	enum { DESC_MAX_SIZE = 1024 * 64 };
+	ztd_wchar_t __tmp_buffer[DESC_MAX_SIZE + 1];
+	ztd_wchar_t* __tmp_buffer_ptr = __tmp_buffer;
+	size_t __tmp_buffer_size      = DESC_MAX_SIZE;
+	cnc_mcerr __conv_err          = cnc_c8ntomwcn(&__buffer_size, &__buffer, &__tmp_buffer_size, &__tmp_buffer_ptr);
+	if (__conv_err != cnc_mcerr_ok) {
+		return __conv_err == cnc_mcerr_incomplete_input ? thrd_nomem : thrd_error;
+	}
+	__tmp_buffer_ptr[0] = 0;
+	return ztdc_thrd_set_mwcname(__thr, __tmp_buffer);
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_c16name_sized(thrd_t __thr, size_t __buffer_size, const ztd_char16_t* __buffer) {
+	if (!__buffer) {
+		return thrd_success;
+	}
+	if (__buffer_size < 1u) {
+		return thrd_success;
+	}
+	if (ztdc_c_string_ptr_size_limit_wc(__buffer_size, __buffer) == __buffer_size
+	     && __buffer[__buffer_size] == (ztd_char16_t)0) {
+		// it is of the right size, has no intermediate null terminators, and is null-terminated properly
+		return ztdc_thrd_set_mwcname(__thr, __buffer);
+	}
+	enum { DESC_MAX_SIZE = 1024 * 64 };
+	if (__buffer_size > DESC_MAX_SIZE) {
+		return thrd_nomem;
+	}
+	// otherwise, we need a temporary buffer
+	ztd_wchar_t __tmp_buffer[DESC_MAX_SIZE + 1];
+	const size_t __copy_bytesize = __buffer_size * sizeof(ztd_wchar_t);
+	memcpy(__tmp_buffer, __buffer, __copy_bytesize);
+	__tmp_buffer[__buffer_size] = 0;
+	return ztdc_thrd_set_mwcname(__thr, __tmp_buffer);
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_c32name_sized(thrd_t __thr, size_t __buffer_size, const ztd_char32_t* __buffer) {
+	if (!__buffer) {
+		return thrd_success;
+	}
+	if (__buffer_size < 1u) {
+		return thrd_success;
+	}
+	enum { DESC_MAX_SIZE = 1024 * 64 };
+	ztd_wchar_t __tmp_buffer[DESC_MAX_SIZE + 1];
+	ztd_wchar_t* __tmp_buffer_ptr = __tmp_buffer;
+	size_t __tmp_buffer_size      = DESC_MAX_SIZE;
+	cnc_mcerr __conv_err          = cnc_c32ntomwcn(&__buffer_size, &__buffer, &__tmp_buffer_size, &__tmp_buffer_ptr);
+	if (__conv_err != cnc_mcerr_ok) {
+		return __conv_err == cnc_mcerr_incomplete_input ? thrd_nomem : thrd_error;
+	}
+	__tmp_buffer_ptr[0] = 0;
+	return ztdc_thrd_set_mwcname(__thr, __tmp_buffer);
 }
 
 #endif

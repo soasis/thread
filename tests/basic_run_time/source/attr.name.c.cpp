@@ -44,7 +44,7 @@ TEST_CASE("thread raw name check", "[thrd][thrd_with_create_attrs][name]") {
 	const constexpr auto thrd_main                        = [](void* arg) -> int {
           int t_id                    = *(int*)arg;
           unsigned char name_buf[128] = {};
-          int name_get_result         = ztdc_thrd_get_name(thrd_current(), ztdc_c_array_size(name_buf), name_buf);
+          int name_get_result = ztdc_thrd_get_native_name(thrd_current(), ztdc_c_array_size(name_buf), name_buf);
           REQUIRE(name_get_result == thrd_success);
           const unsigned char* name = name_buf;
           int expected_name_result  = std::memcmp(name, &expected_thread_name[0], sizeof(expected_thread_name));

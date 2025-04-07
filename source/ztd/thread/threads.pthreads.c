@@ -393,10 +393,10 @@ inline static void* __ztdc_pthread_trampoline(void* __userdata) {
 			// still have thrd_t, and then start it up once it's set. It would save on the malloc(...) for
 			// the __name array...
 			pthread_t __self_thread = pthread_self();
-#if ZTD_IS_ON(ZTD_PLATFORM_NETBSD)
+#if ZTD_IS_ON(ZTD_C_STDLIB_BSD) && ZTD_IS_ON(ZTD_PLATFORM_NETBSD)
 			__pre_err = __ztdc_pthread_to_thread_error(
 			     pthread_setname_np(__self_thread, __trampoline_userdata->__name, 0)); // name + void* arg -- huh??
-#elif ZTD_IS_ON(ZTD_PLATFORM_FREEBSD) || ZTD_IS_ON(ZTD_PLATFORM_OPENBSD)
+#elif ZTD_IS_ON(ZTD_C_STDLIB_BSD) && (ZTD_IS_ON(ZTD_PLATFORM_FREEBSD) || ZTD_IS_ON(ZTD_PLATFORM_OPENBSD))
 			// same as most other *nix but different spelling
 			pthread_set_name_np(__self_thread, __trampoline_userdata->__name);
 #else
@@ -653,13 +653,6 @@ int __ztdc_pthreads_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, vo
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
-int ztdc_thrd_get_name(thrd_t __thr, size_t __buffer_size, void* __buffer) {
-	int __res = pthread_getname_np((pthread_t)__thr, (char*)__buffer, __buffer_size);
-	return __ztdc_pthread_to_thread_error(__res);
-}
-
-ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
-ZTD_USE(ZTD_THREAD_API_LINKAGE)
 int ztdc_thrd_get_mcname(thrd_t __thr, size_t __buffer_size, char* __buffer) {
 	ztd_char8_t __pivot[ZTD_USE(ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE)];
 	const size_t __pivot_size      = ztdc_c_array_size(__pivot);
@@ -747,6 +740,146 @@ int ztdc_thrd_get_c32name(thrd_t __thr, size_t __buffer_size, ztd_char32_t* __bu
 		return thrd_error;
 	}
 	return thrd_nomem;
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_mcname(thrd_t __thr, const char* __buffer) {
+	if (!__buffer) {
+		return thrd_success;
+	}
+#if ZTD_IS_ON(ZTD_PLATFORM_MAC_OS)
+	if (thrd_equal(__thr, thrd_current())) {
+		return thrd_error;
+	}
+	return __ztdc_pthread_to_thread_error(pthread_setname_np(__buffer));
+#else
+	return __ztdc_pthread_to_thread_error(pthread_setname_np((pthread_t)__thr, __buffer));
+#endif
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_mcname_sized(thrd_t __thr, size_t __buffer_size, const char* __buffer) {
+	if (!__buffer) {
+		return thrd_success;
+	}
+	if (__buffer_size < 1u) {
+		return thrd_success;
+	}
+	if (ztdc_c_string_ptr_size_limit_c(__buffer_size, __buffer) == __buffer_size
+	     && __buffer[__buffer_size] == (char)0) {
+		// it is of the right size, has no intermediate null terminators, and is null-terminated properly
+		return ztdc_thrd_set_mcname(__thr, __buffer);
+	}
+	if (__buffer_size >= ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE(char)) {
+		return thrd_nomem;
+	}
+	char __tmp_buffer[ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE(char)];
+	const size_t __copy_byte_size = __buffer_size / sizeof(char);
+	memcpy(__tmp_buffer, __buffer, __copy_byte_size);
+	__tmp_buffer[__buffer_size] = 0;
+	return ztdc_thrd_set_mcname(__thr, __tmp_buffer);
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_c8name(thrd_t __thr, const ztd_char8_t* __buffer) {
+	if (!__buffer) {
+		return thrd_success;
+	}
+#if ZTD_IS_ON(ZTD_PLATFORM_MAC_OS)
+	if (thrd_equal(__thr, thrd_current())) {
+		return thrd_error;
+	}
+	return __ztdc_pthread_to_thread_error(pthread_setname_np((const char*)__buffer));
+#else
+	return __ztdc_pthread_to_thread_error(pthread_setname_np((pthread_t)__thr, (const char*)__buffer));
+#endif
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_mwcname_sized(thrd_t __thr, size_t __buffer_size, const ztd_wchar_t* __buffer) {
+	if (!__buffer) {
+		return thrd_success;
+	}
+	if (__buffer_size < 1u) {
+		return thrd_success;
+	}
+	ztd_char8_t __tmp_buffer[ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE(ztd_char8_t) + 1];
+	ztd_char8_t* __tmp_buffer_ptr = __tmp_buffer;
+	size_t __tmp_buffer_size      = ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE(ztd_char8_t);
+	cnc_mcerr __conv_err          = cnc_mwcntoc8n(&__tmp_buffer_size, &__tmp_buffer_ptr, &__buffer_size, &__buffer);
+	if (__conv_err != cnc_mcerr_ok) {
+		return __conv_err == cnc_mcerr_incomplete_input ? thrd_nomem : thrd_error;
+	}
+	__tmp_buffer_ptr[0] = 0;
+	return ztdc_thrd_set_c8name(__thr, __tmp_buffer);
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_c8name_sized(thrd_t __thr, size_t __buffer_size, const ztd_char8_t* __buffer) {
+	if (!__buffer) {
+		return thrd_success;
+	}
+	if (__buffer_size < 1u) {
+		return thrd_success;
+	}
+	if (ztdc_c_string_ptr_size_limit_c8(__buffer_size, __buffer) == __buffer_size
+	     && __buffer[__buffer_size] == (ztd_char8_t)0) {
+		// it is of the right size, has no intermediate null terminators, and is null-terminated properly
+		return ztdc_thrd_set_c8name(__thr, __buffer);
+	}
+	if (__buffer_size >= ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE(ztd_char8_t)) {
+		return thrd_nomem;
+	}
+	ztd_char8_t __tmp_buffer[ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE(ztd_char8_t)];
+	const size_t __copy_byte_size = __buffer_size / sizeof(ztd_char8_t);
+	memcpy(__tmp_buffer, __buffer, __copy_byte_size);
+	__tmp_buffer[__buffer_size] = 0;
+	return ztdc_thrd_set_c8name(__thr, __tmp_buffer);
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_c16name_sized(thrd_t __thr, size_t __buffer_size, const ztd_char16_t* __buffer) {
+	if (!__buffer) {
+		return thrd_success;
+	}
+	if (__buffer_size < 1u) {
+		return thrd_success;
+	}
+	ztd_char8_t __tmp_buffer[ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE(ztd_char8_t) + 1];
+	ztd_char8_t* __tmp_buffer_ptr = __tmp_buffer;
+	size_t __tmp_buffer_size      = ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE(ztd_char8_t);
+	cnc_mcerr __conv_err          = cnc_c16ntoc8n(&__tmp_buffer_size, &__tmp_buffer_ptr, &__buffer_size, &__buffer);
+	if (__conv_err != cnc_mcerr_ok) {
+		return __conv_err == cnc_mcerr_incomplete_input ? thrd_nomem : thrd_error;
+	}
+	__tmp_buffer_ptr[0] = 0;
+	return ztdc_thrd_set_c8name(__thr, __tmp_buffer);
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_c32name_sized(thrd_t __thr, size_t __buffer_size, const ztd_char32_t* __buffer) {
+	if (!__buffer) {
+		return thrd_success;
+	}
+	if (__buffer_size < 1u) {
+		return thrd_success;
+	}
+	ztd_char8_t __tmp_buffer[ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE(ztd_char8_t) + 1];
+	ztd_char8_t* __tmp_buffer_ptr = __tmp_buffer;
+	size_t __tmp_buffer_size      = ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE(ztd_char8_t);
+	cnc_mcerr __conv_err          = cnc_c32ntoc8n(&__tmp_buffer_size, &__tmp_buffer_ptr, &__buffer_size, &__buffer);
+	if (__conv_err != cnc_mcerr_ok) {
+		return __conv_err == cnc_mcerr_incomplete_input ? thrd_nomem : thrd_error;
+	}
+	__tmp_buffer_ptr[0] = 0;
+	return ztdc_thrd_set_c8name(__thr, __tmp_buffer);
 }
 
 #endif

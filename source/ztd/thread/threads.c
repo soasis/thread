@@ -34,6 +34,7 @@
 #include <ztd/thread/detail/threads.implementation.h>
 
 #include <ztd/idk/static_assert.h>
+#include <ztd/idk/size.h>
 
 inline static int __ztdc_ignore_all_thrd_errors(const ztdc_thrd_attr_kind* __kind, int __err, void* __userdata) {
 	(void)__kind;
@@ -103,4 +104,78 @@ ztdc_thrd_id_t ztdc_thrd_get_id(thrd_t __thr) {
 #else
 #error "Unknown platform."
 #endif
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_get_native_name(thrd_t __thr, size_t __buffer_size, void* __buffer) {
+#if ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
+	return ztdc_thrd_get_mwcname(__thr, __buffer_size / sizeof(ztd_wchar_t), (ztd_wchar_t*)__buffer);
+#elif ZTD_IS_ON(ZTD_PLATFORM_PTHREADS)
+	return ztdc_thrd_get_c8name(__thr, __buffer_size / sizeof(ztd_char8_t), (ztd_char8_t*)__buffer);
+#else
+#error "Unknown platform."
+#endif
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_native_name(thrd_t __thr, const void* __buffer) {
+#if ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
+	return ztdc_thrd_set_mwcname(__thr, (const ztd_wchar_t*)__buffer);
+#elif ZTD_IS_ON(ZTD_PLATFORM_PTHREADS)
+	return ztdc_thrd_set_c8name(__thr, (const ztd_char8_t*)__buffer);
+#else
+#error "Unknown platform."
+#endif
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_native_name_sized(thrd_t __thr, size_t __buffer_size, const void* __buffer) {
+#if ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
+	return ztdc_thrd_set_mwcname_sized(__thr, __buffer_size / sizeof(ztd_wchar_t), (const ztd_wchar_t*)__buffer);
+#elif ZTD_IS_ON(ZTD_PLATFORM_PTHREADS)
+	return ztdc_thrd_set_c8name_sized(__thr, __buffer_size / sizeof(char), (const ztd_char8_t*)__buffer);
+#else
+#error "Unknown platform."
+#endif
+}
+
+#if ZTD_IS_OFF(ZTD_PLATFORM_PTHREADS)
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_mcname(thrd_t __thr, const char* __buffer) {
+	return ztdc_thrd_set_mcname_sized(__thr, ztdc_c_string_ptr_size(__buffer), __buffer);
+}
+#endif
+
+#if ZTD_IS_OFF(ZTD_PLATFORM_WINDOWS)
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_mwcname(thrd_t __thr, const ztd_wchar_t* __buffer) {
+	return ztdc_thrd_set_mwcname_sized(__thr, ztdc_c_string_ptr_size(__buffer), __buffer);
+}
+#endif
+
+#if ZTD_IS_OFF(ZTD_PLATFORM_PTHREADS)
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_c8name(thrd_t __thr, const ztd_char8_t* __buffer) {
+	return ztdc_thrd_set_c8name_sized(__thr, ztdc_c_string_ptr_size(__buffer), __buffer);
+}
+#endif
+
+#if ZTD_IS_OFF(ZTD_PLATFORM_WINDOWS)
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_c16name(thrd_t __thr, const ztd_char16_t* __buffer) {
+	return ztdc_thrd_set_c16name_sized(__thr, ztdc_c_string_ptr_size(__buffer), __buffer);
+}
+#endif
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_set_c32name(thrd_t __thr, const ztd_char32_t* __buffer) {
+	return ztdc_thrd_set_c32name_sized(__thr, ztdc_c_string_ptr_size(__buffer), __buffer);
 }

@@ -93,7 +93,7 @@
 	#endif // MSVC vs. others
 #endif // Intermediate buffer sizing
 
-#define ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE_I_(...) (ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE_I_ / sizeof(__VA_ARGS__))
+#define ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE(...) (ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE_I_ / sizeof(__VA_ARGS__))
 
 // clang-format on
 

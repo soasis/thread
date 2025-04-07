@@ -59,6 +59,22 @@
 #error "Unknown platform."
 #endif
 
+#if ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
+#define __ZTDC_DETAIL_THRD_MAX_SIZE ((1024 * 64) * 2)
+#elif ZTD_IS_ON(ZTD_PLATFORM_PTHREADS)
+#define __ZTDC_DETAIL_THRD_MAX_SIZE 16
+#else
+#error "Unknown platform."
+#endif
+
+#if ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
+#define __ZTDC_DETAIL_THRD_MINIMUM_STACK_SIZE 0
+#elif ZTD_IS_ON(ZTD_PLATFORM_PTHREADS)
+#define __ZTDC_DETAIL_THRD_MINIMUM_STACK_SIZE PTHREAD_STACK_MIN
+#else
+#error "Unknown platform."
+#endif
+
 #if ZTD_IS_OFF(ZTD_HEADER_THREADS_H)
 
 typedef int(__thrd_start_t)(void*);
@@ -222,30 +238,244 @@ ztdc_thrd_id_t ztdc_thrd_get_id(thrd_t __thr);
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Sets the name of the thread, if possible.
+///
+/// @param[in] __thr The thread to name.
+/// @param[in] __buffer A pointer to the implementation-defined null-terminated string.
+///
+/// @return `thrd_success` if setting the name works, or some other thread error if it fails.
+///
+/// @remarks The buffer is treated as a null-terminated string of an implementation-defined type.
+int ztdc_thrd_set_native_name(thrd_t __thr, const void* __buffer);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Sets the name of the thread, if possible.
+///
+/// @param[in] __thr The thread to name.
+/// @param[in] __buffer A pointer to the execution encoding, null-terinated string.
+///
+/// @return `thrd_success` if setting the name works, or some other thread error if it fails.
+///
+/// @remarks The thread name will be converted to an internal encoding, if necessary, for the platform.
+int ztdc_thrd_set_mcname(thrd_t __thr, const char* __buffer);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Sets the name of the thread, if possible.
+///
+/// @param[in] __thr The thread to name.
+/// @param[in] __buffer A pointer to the wide execution encoding, null-terinated string.
+///
+/// @return `thrd_success` if setting the name works, or some other thread error if it fails.
+///
+/// @remarks The thread name will be converted to an internal encoding, if necessary, for the platform.
+int ztdc_thrd_set_mwcname(thrd_t __thr, const ztd_wchar_t* __buffer);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Sets the name of the thread, if possible.
+///
+/// @param[in] __thr The thread to name.
+/// @param[in] __buffer A pointer to the UTF-8 null-terinated string.
+///
+/// @return `thrd_success` if setting the name works, or some other thread error if it fails.
+///
+/// @remarks The thread name will be converted to an internal encoding, if necessary, for the platform.
+int ztdc_thrd_set_c8name(thrd_t __thr, const ztd_char8_t* __buffer);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Sets the name of the thread, if possible.
+///
+/// @param[in] __thr The thread to name.
+/// @param[in] __buffer A pointer to the UTF-16 null-terinated string.
+///
+/// @return `thrd_success` if setting the name works, or some other thread error if it fails.
+///
+/// @remarks The thread name will be converted to an internal encoding, if necessary, for the platform.
+int ztdc_thrd_set_c16name(thrd_t __thr, const ztd_char16_t* __buffer);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Sets the name of the thread, if possible.
+///
+/// @param[in] __thr The thread to name.
+/// @param[in] __buffer A pointer to the UTF-32 null-terinated string.
+///
+/// @return `thrd_success` if setting the name works, or some other thread error if it fails.
+///
+/// @remarks The thread name will be converted to an internal encoding, if necessary, for the platform.
+int ztdc_thrd_set_c32name(thrd_t __thr, const ztd_char32_t* __buffer);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Sets the name of the thread, if possible.
+///
+/// @param[in] __thr The thread to name.
+/// @param[in] __buffer A pointer to the implementation-defined null-terminated string.
+/// @param[in] __buffer_size The size of the implementation-defined string.
+///
+/// @return `thrd_success` if setting the name works, or some other thread error if it fails.
+///
+/// @remarks The buffer is treated as a null-terminated string of an implementation-defined type and an
+/// implementation-defined null terminator. The string is not allowed to have a null terminator of the
+/// implementation-defined size in the range of memory.
+int ztdc_thrd_set_native_name_sized(thrd_t __thr, size_t __buffer_size, const void* __buffer);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Sets the name of the thread, if possible.
+///
+/// @param[in] __thr The thread to name.
+/// @param[in] __buffer_size The size of the execution encoding string.
+/// @param[in] __buffer A pointer to the execution encoding string.
+///
+/// @return `thrd_success` if setting the name works, or some other thread error if it fails.
+///
+/// @remarks The thread name will be converted to an internal encoding, if necessary, for the platform.
+int ztdc_thrd_set_mcname_sized(thrd_t __thr, size_t __buffer_size, const char* __buffer);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Sets the name of the thread, if possible.
+///
+/// @param[in] __thr The thread to name.
+/// @param[in] __buffer_size The size of the wide execution encoding string.
+/// @param[in] __buffer A pointer to the wide execution encoding string.
+///
+/// @return `thrd_success` if setting the name works, or some other thread error if it fails.
+///
+/// @remarks The thread name will be converted to an internal encoding, if necessary, for the platform.
+int ztdc_thrd_set_mwcname_sized(thrd_t __thr, size_t __buffer_size, const ztd_wchar_t* __buffer);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Sets the name of the thread, if possible.
+///
+/// @param[in] __thr The thread to name.
+/// @param[in] __buffer_size The size of the UTF-8 string.
+/// @param[in] __buffer A pointer to the UTF-8 string.
+///
+/// @return `thrd_success` if setting the name works, or some other thread error if it fails.
+///
+/// @remarks The thread name will be converted to an internal encoding, if necessary, for the platform.
+int ztdc_thrd_set_c8name_sized(thrd_t __thr, size_t __buffer_size, const ztd_char8_t* __buffer);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Sets the name of the thread, if possible.
+///
+/// @param[in] __thr The thread to name.
+/// @param[in] __buffer_size The size of the UTF-8 string.
+/// @param[in] __buffer A pointer to the UTF-8 string.
+///
+/// @return `thrd_success` if setting the name works, or some other thread error if it fails.
+///
+/// @remarks The thread name will be converted to an internal encoding, if necessary, for the platform.
+int ztdc_thrd_set_c16name_sized(thrd_t __thr, size_t __buffer_size, const ztd_char16_t* __buffer);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Sets the name of the thread, if possible.
+///
+/// @param[in] __thr The thread to name.
+/// @param[in] __buffer_size The size of the UTF-8 string.
+/// @param[in] __buffer A pointer to the UTF-8 string.
+///
+/// @return `thrd_success` if setting the name works, or some other thread error if it fails.
+///
+/// @remarks The thread name will be converted to an internal encoding, if necessary, for the platform.
+int ztdc_thrd_set_c32name_sized(thrd_t __thr, size_t __buffer_size, const ztd_char32_t* __buffer);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Sets the name of the thread, if possible.
+///
+/// @param[in] __thr The thread to name.
+/// @param[in] __buffer_size The size of the implementation-defined string, in bytes.
+/// @param[in] __buffer A pointer to the implementation-defined string.
+///
+/// @return `thrd_success` if setting the name works, or some other thread error if it fails.
+///
+/// @remarks The name is assumed to be of the right type and thus very little copying takes place.
+int ztdc_thrd_get_native_name(thrd_t __thr, size_t __buffer_size, void* __buffer);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Sets the name of the thread, if possible.
+///
+/// @param[in] __thr The thread to name.
+/// @param[in] __buffer_size The size of the execution encoding buffer.
+/// @param[in, out] __buffer A pointer to recieve the execution encoding string.
+///
+/// @return `thrd_success` if setting the name works, or some other thread error if it fails.
+///
+/// @remarks Errors may or may not work on this, synchronization primitives for holding ignored.S
 int ztdc_thrd_get_mcname(thrd_t __thr, size_t __buffer_size, char* __buffer);
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
-int ztdc_thrd_get_mcname(thrd_t __thr, size_t __buffer_size, char* __buffer);
-
-ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
-ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Sets the name of the thread, if possible.
+///
+/// @param[in] __thr The thread to name.
+/// @param[in] __buffer_size The size of the wide execution encoding buffer.
+/// @param[in, out] __buffer A pointer to recieve the wide execution encoding string.
+///
+/// @return `thrd_success` if setting the name works, or some other thread error if it fails.
+///
+/// @remarks The thread name will be converted to an internal encoding, if necessary, for the platform.
 int ztdc_thrd_get_mwcname(thrd_t __thr, size_t __buffer_size, ztd_wchar_t* __buffer);
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Sets the name of the thread, if possible.
+///
+/// @param[in] __thr The thread to name.
+/// @param[in] __buffer_size The size of the UTF-8 buffer.
+/// @param[in, out] __buffer A pointer to recieve the UTF-8 string.
+///
+/// @return `thrd_success` if setting the name works, or some other thread error if it fails.
+///
+/// @remarks The thread name will be converted to an internal encoding, if necessary, for the platform.
 int ztdc_thrd_get_c8name(thrd_t __thr, size_t __buffer_size, ztd_char8_t* __buffer);
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Sets the name of the thread, if possible.
+///
+/// @param[in] __thr The thread to name.
+/// @param[in] __buffer_size The size of the UTF-16 buffer.
+/// @param[in, out] __buffer A pointer to recieve the UTF-16 string.
+///
+/// @return `thrd_success` if setting the name works, or some other thread error if it fails.
+///
+/// @remarks The thread name will be converted to an internal encoding, if necessary, for the platform.
 int ztdc_thrd_get_c16name(thrd_t __thr, size_t __buffer_size, ztd_char16_t* __buffer);
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Sets the name of the thread, if possible.
+///
+/// @param[in] __thr The thread to name.
+/// @param[in] __buffer_size The size of the UTF-32 buffer.
+/// @param[in, out] __buffer A pointer to recieve the UTF-32 string.
+///
+/// @return `thrd_success` if setting the name works, or some other thread error if it fails.
+///
+/// @remarks The thread name will be converted to an internal encoding, if necessary, for the platform.
 int ztdc_thrd_get_c32name(thrd_t __thr, size_t __buffer_size, ztd_char32_t* __buffer);
 
-ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
-ZTD_USE(ZTD_THREAD_API_LINKAGE)
-int ztdc_thrd_get_name(thrd_t __thr, size_t __buffer_size, void* __buffer);
+/// @brief The maximum number of bytes an implementation can store for the name without needing to allocate or running
+/// out of internal space. String sizes less than this (including the null terminator).
+///
+/// @remarks This value may be "0" and thus should have its use guarded when used for e.g. an array size.
+#define ZTDC_THRD_MAXIMUM_NAME_SIZE __ZTDC_DETAIL_THRD_NAME_MAX_SIZE
+
+/// @brief The absolute minimum stack size an implementation can tolerate.
+///
+/// @remarks This is only a suggestion: implementations can raise or lower stack sizes through means at run time and
+/// compilation time.
+#define ZTDC_THRD_MINIMUM_STACK_SIZE __ZTDC_DETAIL_THRD_MINIMUM_STACK_SIZE
 
 #endif

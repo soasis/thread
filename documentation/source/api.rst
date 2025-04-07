@@ -145,3 +145,47 @@ These structures are less portable and do not work across platforms.
 
 .. doxygenstruct:: ztdc_thrd_attr__stack_guard_size
 	:members:
+
+
+
+``ztdc_thrd_set_name`` functions
+--------------------------------
+
+.. doxygenfunction:: ztdc_thrd_set_native_name
+
+.. doxygenfunction:: ztdc_thrd_set_mcname
+
+.. doxygenfunction:: ztdc_thrd_set_mwcname
+
+.. doxygenfunction:: ztdc_thrd_set_c8name
+
+.. doxygenfunction:: ztdc_thrd_set_c16name
+
+.. doxygenfunction:: ztdc_thrd_set_c32name
+
+
+
+``ztdc_thrd_get_name`` functions
+--------------------------------
+
+.. doxygenfunction:: ztdc_thrd_get_native_name
+
+.. doxygenfunction:: ztdc_thrd_get_mcname
+
+.. doxygenfunction:: ztdc_thrd_get_mwcname
+
+.. doxygenfunction:: ztdc_thrd_get_c8name
+
+.. doxygenfunction:: ztdc_thrd_get_c16name
+
+.. doxygenfunction:: ztdc_thrd_get_c32name
+
+
+
+``ZTDC_THRD_*`` bounds macros
+-----------------------------
+
+.. doxygendefine:: ZTDC_THRD_MAXIMUM_NAME_SIZE
+
+.. doxygendefine:: ZTDC_THRD_MINIMUM_STACK_SIZE
+
