@@ -906,7 +906,7 @@ int ztdc_thrd_set_mcname_sized(thrd_t __thr, size_t __buffer_size, const ztd_cha
 	ztd_wchar_t __tmp_buffer[DESC_MAX_SIZE + 1];
 	ztd_wchar_t* __tmp_buffer_ptr = __tmp_buffer;
 	size_t __tmp_buffer_size      = DESC_MAX_SIZE;
-	cnc_mcerr __conv_err          = cnc_mcntomwcn(&__buffer_size, &__buffer, &__tmp_buffer_size, &__tmp_buffer_ptr);
+	cnc_mcerr __conv_err          = cnc_mcsntomwcsn(&__tmp_buffer_size, &__tmp_buffer_ptr, &__buffer_size, &__buffer);
 	if (__conv_err != cnc_mcerr_ok) {
 		return __conv_err == cnc_mcerr_incomplete_input ? thrd_nomem : thrd_error;
 	}
@@ -953,7 +953,7 @@ int ztdc_thrd_set_c8name_sized(thrd_t __thr, size_t __buffer_size, const ztd_cha
 	ztd_wchar_t __tmp_buffer[DESC_MAX_SIZE + 1];
 	ztd_wchar_t* __tmp_buffer_ptr = __tmp_buffer;
 	size_t __tmp_buffer_size      = DESC_MAX_SIZE;
-	cnc_mcerr __conv_err          = cnc_c8ntomwcn(&__buffer_size, &__buffer, &__tmp_buffer_size, &__tmp_buffer_ptr);
+	cnc_mcerr __conv_err          = cnc_c8sntomwcsn(&__tmp_buffer_size, &__tmp_buffer_ptr, &__buffer_size, &__buffer);
 	if (__conv_err != cnc_mcerr_ok) {
 		return __conv_err == cnc_mcerr_incomplete_input ? thrd_nomem : thrd_error;
 	}
@@ -973,7 +973,7 @@ int ztdc_thrd_set_c16name_sized(thrd_t __thr, size_t __buffer_size, const ztd_ch
 	if (ztdc_c_string_ptr_size_limit_wc(__buffer_size, __buffer) == __buffer_size
 	     && __buffer[__buffer_size] == (ztd_char16_t)0) {
 		// it is of the right size, has no intermediate null terminators, and is null-terminated properly
-		return ztdc_thrd_set_mwcname(__thr, __buffer);
+		return ztdc_thrd_set_mwcname(__thr, (const ztd_wchar_t*)__buffer);
 	}
 	enum { DESC_MAX_SIZE = 1024 * 64 };
 	if (__buffer_size > DESC_MAX_SIZE) {
@@ -1000,7 +1000,7 @@ int ztdc_thrd_set_c32name_sized(thrd_t __thr, size_t __buffer_size, const ztd_ch
 	ztd_wchar_t __tmp_buffer[DESC_MAX_SIZE + 1];
 	ztd_wchar_t* __tmp_buffer_ptr = __tmp_buffer;
 	size_t __tmp_buffer_size      = DESC_MAX_SIZE;
-	cnc_mcerr __conv_err          = cnc_c32ntomwcn(&__buffer_size, &__buffer, &__tmp_buffer_size, &__tmp_buffer_ptr);
+	cnc_mcerr __conv_err          = cnc_c32sntomwcsn(&__tmp_buffer_size, &__tmp_buffer_ptr, &__buffer_size, &__buffer);
 	if (__conv_err != cnc_mcerr_ok) {
 		return __conv_err == cnc_mcerr_incomplete_input ? thrd_nomem : thrd_error;
 	}

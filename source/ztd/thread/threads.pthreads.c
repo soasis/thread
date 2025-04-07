@@ -749,7 +749,7 @@ int ztdc_thrd_set_mcname(thrd_t __thr, const char* __buffer) {
 		return thrd_success;
 	}
 #if ZTD_IS_ON(ZTD_PLATFORM_MAC_OS)
-	if (thrd_equal(__thr, thrd_current())) {
+	if (!thrd_equal(__thr, thrd_current())) {
 		return thrd_error;
 	}
 	return __ztdc_pthread_to_thread_error(pthread_setname_np(__buffer));
@@ -789,7 +789,7 @@ int ztdc_thrd_set_c8name(thrd_t __thr, const ztd_char8_t* __buffer) {
 		return thrd_success;
 	}
 #if ZTD_IS_ON(ZTD_PLATFORM_MAC_OS)
-	if (thrd_equal(__thr, thrd_current())) {
+	if (!thrd_equal(__thr, thrd_current())) {
 		return thrd_error;
 	}
 	return __ztdc_pthread_to_thread_error(pthread_setname_np((const char*)__buffer));
@@ -810,7 +810,7 @@ int ztdc_thrd_set_mwcname_sized(thrd_t __thr, size_t __buffer_size, const ztd_wc
 	ztd_char8_t __tmp_buffer[ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE(ztd_char8_t) + 1];
 	ztd_char8_t* __tmp_buffer_ptr = __tmp_buffer;
 	size_t __tmp_buffer_size      = ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE(ztd_char8_t);
-	cnc_mcerr __conv_err          = cnc_mwcntoc8n(&__tmp_buffer_size, &__tmp_buffer_ptr, &__buffer_size, &__buffer);
+	cnc_mcerr __conv_err          = cnc_mwcsntoc8sn(&__tmp_buffer_size, &__tmp_buffer_ptr, &__buffer_size, &__buffer);
 	if (__conv_err != cnc_mcerr_ok) {
 		return __conv_err == cnc_mcerr_incomplete_input ? thrd_nomem : thrd_error;
 	}
@@ -854,7 +854,7 @@ int ztdc_thrd_set_c16name_sized(thrd_t __thr, size_t __buffer_size, const ztd_ch
 	ztd_char8_t __tmp_buffer[ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE(ztd_char8_t) + 1];
 	ztd_char8_t* __tmp_buffer_ptr = __tmp_buffer;
 	size_t __tmp_buffer_size      = ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE(ztd_char8_t);
-	cnc_mcerr __conv_err          = cnc_c16ntoc8n(&__tmp_buffer_size, &__tmp_buffer_ptr, &__buffer_size, &__buffer);
+	cnc_mcerr __conv_err          = cnc_c16sntoc8sn(&__tmp_buffer_size, &__tmp_buffer_ptr, &__buffer_size, &__buffer);
 	if (__conv_err != cnc_mcerr_ok) {
 		return __conv_err == cnc_mcerr_incomplete_input ? thrd_nomem : thrd_error;
 	}
@@ -874,7 +874,7 @@ int ztdc_thrd_set_c32name_sized(thrd_t __thr, size_t __buffer_size, const ztd_ch
 	ztd_char8_t __tmp_buffer[ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE(ztd_char8_t) + 1];
 	ztd_char8_t* __tmp_buffer_ptr = __tmp_buffer;
 	size_t __tmp_buffer_size      = ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_SIZE(ztd_char8_t);
-	cnc_mcerr __conv_err          = cnc_c32ntoc8n(&__tmp_buffer_size, &__tmp_buffer_ptr, &__buffer_size, &__buffer);
+	cnc_mcerr __conv_err          = cnc_c32sntoc8sn(&__tmp_buffer_size, &__tmp_buffer_ptr, &__buffer_size, &__buffer);
 	if (__conv_err != cnc_mcerr_ok) {
 		return __conv_err == cnc_mcerr_incomplete_input ? thrd_nomem : thrd_error;
 	}

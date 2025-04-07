@@ -78,9 +78,7 @@ option(ZTD_THREAD_TESTS "Enable build of tests" OFF)
 option(ZTD_THREAD_DOCUMENTATION "Enable build of documentation" OFF)
 option(ZTD_THREAD_DOCUMENTATION_NO_SPHINX "Turn off Sphinx usage (useful for ReadTheDocs builds)" OFF)
 option(ZTD_THREAD_EXAMPLES "Enable build of examples" OFF)
-option(ZTD_THREAD_BENCHMARKS "Enable build of benchmarks" OFF)
 option(ZTD_THREAD_GENERATE_SINGLE "Enable generation of a single header and its target" OFF)
-set(ZTD_THREAD_BENCHMARKS_REPETITIONS 50 CACHE STRING "Number of repetitions to perform. Each repetition has a number of iterations: higher means a lot more time is spent benchmarking.")
 
 # Modify bad flags / change defaults if we are the top level
 if(ZTD_THREAD_IS_TOP_LEVEL_PROJECT)
@@ -96,7 +94,7 @@ if(ZTD_THREAD_IS_TOP_LEVEL_PROJECT)
 		set(CMAKE_C_STANDARD 11)
 	endif()
 
-	if(ZTD_THREAD_BENCHMARKS OR ZTD_THREAD_EXAMPLES OR ZTD_THREAD_TESTS OR ZTD_THREAD_SCRATCH)
+	if(ZTD_THREAD_EXAMPLES OR ZTD_THREAD_TESTS OR ZTD_THREAD_SCRATCH)
 		# normal flags
 		check_compiler_flag(disable-permissive MSVC /permissive- GCC -pedantic)
 		check_compiler_flag(disable-aliasing GCC -fno-strict-aliasing)
@@ -232,11 +230,6 @@ endif()
 
 if(ZTD_THREAD_DOCUMENTATION)
 	add_subdirectory(documentation)
-endif()
-
-if(ZTD_THREAD_BENCHMARKS)
-	# none yet
-	#add_subdirectory(benchmarks)
 endif()
 
 if(ZTD_THREAD_EXAMPLES)
