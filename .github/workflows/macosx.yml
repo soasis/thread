@@ -17,8 +17,8 @@ jobs:
 
     - name: configure
       run: |
-        cmake -B build/debug   -D ZTD_THREAD_TESTS=ON -D ZTD_THREAD_EXAMPLES=ON -D ZTD_THREAD_GENERATE_SINGLE=ON
-        cmake -B build/release -D ZTD_THREAD_TESTS=ON -D ZTD_THREAD_EXAMPLES=ON -D ZTD_THREAD_GENERATE_SINGLE=ON
+        cmake -B build/debug   -G Ninja -D ZTD_THREAD_TESTS=ON -D ZTD_THREAD_EXAMPLES=ON -D ZTD_THREAD_GENERATE_SINGLE=ON
+        cmake -B build/release -G Ninja -D ZTD_THREAD_TESTS=ON -D ZTD_THREAD_EXAMPLES=ON -D ZTD_THREAD_GENERATE_SINGLE=ON
 
     - name: build
       run: |
