@@ -41,15 +41,20 @@
 TEST_CASE("thread raw name check", "[thrd][thrd_with_create_attrs][name]") {
 	static constexpr unsigned char given[]                = "abcdefghi\0\0\0";
 	static constexpr unsigned char expected_thread_name[] = "abcdefghi\0\0\0";
-	const constexpr auto thrd_main                        = [](void* arg) -> int {
-          int t_id                    = *(int*)arg;
-          unsigned char name_buf[128] = {};
-          int name_get_result = ztdc_thrd_get_native_name(thrd_current(), ztdc_c_array_size(name_buf), name_buf);
-          REQUIRE(name_get_result == thrd_success);
-          const unsigned char* name = name_buf;
-          int expected_name_result  = std::memcmp(name, &expected_thread_name[0], sizeof(expected_thread_name));
-          REQUIRE(expected_name_result == 0);
-          thrd_exit(t_id);
+
+	typedef struct thread_results {
+		int id;
+		int name_get_result;
+		int expected_name_result;
+	} thread_results;
+
+	const constexpr auto thrd_main = [](void* arg) -> int {
+		thread_results* t_results   = (thread_results*)arg;
+		unsigned char name_buf[128] = {};
+		t_results->name_get_result = ztdc_thrd_get_native_name(thrd_current(), ztdc_c_array_size(name_buf), name_buf);
+		const unsigned char* name  = name_buf;
+		t_results->expected_name_result = std::memcmp(name, &expected_thread_name[0], sizeof(expected_thread_name));
+		thrd_exit(t_results->id);
 	};
 
 	thrd_t t0 = {};
@@ -64,10 +69,12 @@ TEST_CASE("thread raw name check", "[thrd][thrd_with_create_attrs][name]") {
 		&name_attr.kind,
 	};
 
-	int t0_id      = 0xF3;
-	int create_err = ztdc_thrd_create_attrs(&t0, thrd_main, &t0_id, ztdc_c_array_size(attrs), attrs);
+	thread_results t0_results = { 0xF3, 0xFFFF, 0xFFFF };
+	int create_err            = ztdc_thrd_create_attrs(&t0, thrd_main, &t0_results, ztdc_c_array_size(attrs), attrs);
 	REQUIRE(create_err == thrd_success);
 	int res0 = 0;
 	thrd_join(t0, &res0);
-	REQUIRE(res0 == 0xF3);
+	REQUIRE(res0 == t0_results.id);
+	REQUIRE(t0_results.name_get_result == 0);
+	REQUIRE(t0_results.expected_name_result == 0);
 }

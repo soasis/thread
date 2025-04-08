@@ -38,6 +38,20 @@
 #include <cstdio>
 #include <type_traits>
 
+typedef struct thread_with_id {
+	thrd_t thr;
+	int id;
+	int name_get_result0;
+	int name_set_result0;
+	int expected_name_result0;
+	int name_get_result1;
+	int name_set_result1;
+	int expected_name_result1;
+	int name_get_result2;
+	int name_set_result2;
+	int expected_name_result2;
+} thread_with_id;
+
 TEST_CASE("encoded thread name check", "[thrd][thrd_with_create_attrs][encoded-name]") {
 #define MAKE_TEST_BRACKET(given_prefix, given, given_type, expected_prefix, expected, expected_type)                                             \
 	using given_char_t    = std::remove_cv_t<std::remove_reference_t<decltype(given[0])>>;                                                      \
@@ -45,61 +59,61 @@ TEST_CASE("encoded thread name check", "[thrd][thrd_with_create_attrs][encoded-n
 	static constexpr const given_char_t thread_name[]             = given;                                                                      \
 	static constexpr const expected_char_t expected_thread_name[] = expected;                                                                   \
 	const constexpr auto thrd_main0                               = [](void* arg) -> int {                                                      \
-          int t_id                      = *(int*)arg;                                                              \
+          thread_with_id* t_id          = (thread_with_id*)arg;                                                    \
           expected_char_t name_buf[128] = {};                                                                      \
-          int name_get_result           = ztdc_thrd_get_##expected_prefix##name(                                   \
-               thrd_current(), ztdc_c_array_size(name_buf), (expected_type*)name_buf);                   \
-          REQUIRE(name_get_result == thrd_success);                                                                \
+          t_id->name_get_result0        = ztdc_thrd_get_##expected_prefix##name(                                   \
+               thrd_current(), ztdc_c_array_size(name_buf), (expected_type*)name_buf);                      \
           const expected_char_t* name = name_buf;                                                                  \
-          int expected_name_result    = std::memcmp(name, &expected_thread_name[0], sizeof(expected_thread_name)); \
-          REQUIRE(expected_name_result == 0);                                                                      \
-          thrd_exit(t_id);                                                                                         \
+          t_id->expected_name_result0 = std::memcmp(name, &expected_thread_name[0], sizeof(expected_thread_name)); \
+          thrd_exit(t_id->id);                                                                                     \
 	};                                                                                                                                          \
 	const constexpr auto thrd_main1 = [](void* arg) -> int {                                                                                    \
-		int t_id = *(int*)arg;                                                                                                                 \
+		thread_with_id* t_id = (thread_with_id*)arg;                                                                                           \
 		{                                                                                                                                      \
-			int name_set_result = ztdc_thrd_set_##given_prefix##name(thrd_current(), (given_type*)thread_name);                               \
-			REQUIRE(name_set_result == thrd_success);                                                                                         \
+			t_id->name_set_result0 = ztdc_thrd_set_##given_prefix##name(t_id->thr, (given_type*)thread_name);                                 \
+			REQUIRE(t_id->name_set_result0 == thrd_success);                                                                                  \
 			expected_char_t name_buf[128] = {};                                                                                               \
-			int name_get_result           = ztdc_thrd_get_##expected_prefix##name(                                                            \
-                    thrd_current(), ztdc_c_array_size(name_buf), (expected_type*)name_buf);                                            \
-			REQUIRE(name_get_result == thrd_success);                                                                                         \
+			t_id->name_get_result0        = ztdc_thrd_get_##expected_prefix##name(                                                            \
+                    t_id->thr, ztdc_c_array_size(name_buf), (expected_type*)name_buf);                                                    \
+			REQUIRE(t_id->name_get_result0 == thrd_success);                                                                                  \
 			const expected_char_t* name = name_buf;                                                                                           \
-			int expected_name_result    = std::memcmp(name, &expected_thread_name[0], sizeof(expected_thread_name));                          \
-			REQUIRE(expected_name_result == 0);                                                                                               \
+			t_id->expected_name_result0                                                                                                       \
+			     = std::memcmp(name, &expected_thread_name[0], sizeof(expected_thread_name));                                                 \
+			REQUIRE(t_id->expected_name_result0 == 0);                                                                                        \
 		}                                                                                                                                      \
 		{                                                                                                                                      \
-			int name_set_result = ztdc_thrd_set_##given_prefix##name_sized(                                                                   \
-			     thrd_current(), ztdc_c_string_ptr_size(thread_name), (given_type*)thread_name);                                              \
-			REQUIRE(name_set_result == thrd_success);                                                                                         \
+			t_id->name_set_result1 = ztdc_thrd_set_##given_prefix##name_sized(                                                                \
+			     t_id->thr, ztdc_c_string_ptr_size(thread_name), (given_type*)thread_name);                                                   \
+			REQUIRE(t_id->name_set_result1 == thrd_success);                                                                                  \
 			expected_char_t name_buf[128] = {};                                                                                               \
-			int name_get_result           = ztdc_thrd_get_##expected_prefix##name(                                                            \
-                    thrd_current(), ztdc_c_array_size(name_buf), (expected_type*)name_buf);                                            \
-			REQUIRE(name_get_result == thrd_success);                                                                                         \
+			t_id->name_get_result1        = ztdc_thrd_get_##expected_prefix##name(                                                            \
+                    t_id->thr, ztdc_c_array_size(name_buf), (expected_type*)name_buf);                                                    \
+			REQUIRE(t_id->name_get_result1 == thrd_success);                                                                                  \
 			const expected_char_t* name = name_buf;                                                                                           \
-			int expected_name_result    = std::memcmp(name, &expected_thread_name[0], sizeof(expected_thread_name));                          \
-			REQUIRE(expected_name_result == 0);                                                                                               \
+			t_id->expected_name_result1                                                                                                       \
+			     = std::memcmp(name, &expected_thread_name[0], sizeof(expected_thread_name));                                                 \
+			REQUIRE(t_id->expected_name_result1 == 0);                                                                                        \
 		}                                                                                                                                      \
 		{                                                                                                                                      \
 			/* flex case where the actual string portion given is not null-terminated... */                                                   \
-			int name_set_result = ztdc_thrd_set_##given_prefix##name_sized(thrd_current(),                                                    \
+			t_id->name_set_result2 = ztdc_thrd_set_##given_prefix##name_sized(t_id->thr,                                                      \
 			     std::basic_string<given_char_t>(thread_name).find((given_char_t)'!'), (given_type*)thread_name);                             \
-			REQUIRE(name_set_result == thrd_success);                                                                                         \
+			REQUIRE(t_id->name_set_result2 == thrd_success);                                                                                  \
 			expected_char_t name_buf[128] = {};                                                                                               \
-			int name_get_result           = ztdc_thrd_get_##expected_prefix##name(                                                            \
-                    thrd_current(), ztdc_c_array_size(name_buf), (expected_type*)name_buf);                                            \
-			REQUIRE(name_get_result == thrd_success);                                                                                         \
+			t_id->name_get_result2        = ztdc_thrd_get_##expected_prefix##name(                                                            \
+                    t_id->thr, ztdc_c_array_size(name_buf), (expected_type*)name_buf);                                                    \
+			REQUIRE(t_id->name_get_result2 == thrd_success);                                                                                  \
 			const expected_char_t* name = name_buf;                                                                                           \
 			auto expected_name_size                                                                                                           \
 			     = std::basic_string<expected_char_t>(expected_thread_name).find((given_char_t)'!')                                           \
 			     * sizeof(expected_char_t);                                                                                                   \
-			int expected_name_result = std::memcmp(name, &expected_thread_name[0], expected_name_size);                                       \
-			REQUIRE(expected_name_result == 0);                                                                                               \
+			t_id->expected_name_result2 = std::memcmp(name, &expected_thread_name[0], expected_name_size);                                    \
+			REQUIRE(t_id->expected_name_result2 == 0);                                                                                        \
 		}                                                                                                                                      \
-		thrd_exit(t_id);                                                                                                                       \
+		return t_id->id;                                                                                                                       \
 	};                                                                                                                                          \
                                                                                                                                                  \
-	thrd_t t0                                     = {};                                                                                         \
+	thread_with_id t0_arg = { {}, 0xF3, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF };                               \
 	ztdc_thrd_attr_##given_prefix##name name_attr = {                                                                                           \
 		/* format */                                                                                                                           \
 		ztdc_thrd_attr_kind_##given_prefix##name,                                                                                              \
@@ -108,18 +122,28 @@ TEST_CASE("encoded thread name check", "[thrd][thrd_with_create_attrs][encoded-n
 	const ztdc_thrd_attr_kind* attrs[] = {                                                                                                      \
 		&name_attr.kind,                                                                                                                       \
 	};                                                                                                                                          \
-	int t0_id      = 0xF3;                                                                                                                      \
-	int create_err = ztdc_thrd_create_attrs(&t0, thrd_main0, &t0_id, ztdc_c_array_size(attrs), attrs);                                          \
+	int create_err = ztdc_thrd_create_attrs(&t0_arg.thr, thrd_main0, &t0_arg, ztdc_c_array_size(attrs), attrs);                                 \
 	REQUIRE(create_err == thrd_success);                                                                                                        \
 	int res0 = 0;                                                                                                                               \
-	thrd_join(t0, &res0);                                                                                                                       \
+	thrd_join(t0_arg.thr, &res0);                                                                                                               \
 	REQUIRE(res0 == 0xF3);                                                                                                                      \
-	thrd_t t1       = {};                                                                                                                       \
-	int t1_id       = 0xF5;                                                                                                                     \
-	int create_err1 = ztdc_thrd_create_attrs(&t1, thrd_main1, &t1_id, 0, NULL);                                                                 \
+	REQUIRE(t0_arg.name_get_result0 == thrd_success);                                                                                           \
+	REQUIRE(t0_arg.expected_name_result0 == 0);                                                                                                 \
+                                                                                                                                                 \
+	thread_with_id t1_arg = { {}, 0xF5, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF };                               \
+	int create_err1       = ztdc_thrd_create_attrs(&t1_arg.thr, thrd_main1, &t1_arg, 0, NULL);                                                  \
 	REQUIRE(create_err1 == thrd_success);                                                                                                       \
 	int res1 = 0;                                                                                                                               \
-	thrd_join(t1, &res1);                                                                                                                       \
+	thrd_join(t1_arg.thr, &res1);                                                                                                               \
+	REQUIRE(t1_arg.name_set_result0 == thrd_success);                                                                                           \
+	REQUIRE(t1_arg.name_get_result0 == thrd_success);                                                                                           \
+	REQUIRE(t1_arg.expected_name_result0 == 0);                                                                                                 \
+	REQUIRE(t1_arg.name_set_result1 == thrd_success);                                                                                           \
+	REQUIRE(t1_arg.name_get_result1 == thrd_success);                                                                                           \
+	REQUIRE(t1_arg.expected_name_result1 == 0);                                                                                                 \
+	REQUIRE(t1_arg.name_set_result2 == thrd_success);                                                                                           \
+	REQUIRE(t1_arg.name_get_result2 == thrd_success);                                                                                           \
+	REQUIRE(t1_arg.expected_name_result2 == 0);                                                                                                 \
 	REQUIRE(res1 == 0xF5)
 
 	SECTION("c8/u8/ascii") {

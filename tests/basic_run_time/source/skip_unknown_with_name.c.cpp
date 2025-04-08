@@ -37,21 +37,30 @@
 #include <cstring>
 #include <cstdio>
 
-extern "C" inline int thrd_main(void* arg) {
-	int t_id           = *(int*)arg;
-	char name_buf[128] = {};
-	int success        = ztdc_thrd_get_c8name(thrd_current(), sizeof(name_buf), (ztd_char8_t*)&name_buf[0]);
-	if (success == thrd_success) {
-		const char* t_name = name_buf;
-		if (t_id == 1) {
-			REQUIRE(std::strcmp(t_name, "meow?!") == 0);
+namespace {
+	typedef struct thread_results {
+		int id;
+		int getname_result;
+		int strcmp_result;
+	} thread_results;
+
+	inline int thrd_main(void* arg) {
+		thread_results* t_results = (thread_results*)arg;
+		char name_buf[128]        = {};
+		t_results->getname_result
+		     = ztdc_thrd_get_c8name(thrd_current(), sizeof(name_buf), (ztd_char8_t*)&name_buf[0]);
+		if (t_results->getname_result == thrd_success) {
+			const char* t_name = name_buf;
+			if (t_results->id == 1) {
+				t_results->strcmp_result = std::strcmp(t_name, "meow?!");
+			}
+			else {
+				t_results->strcmp_result = std::strcmp(t_name, "bark?!?!");
+			}
 		}
-		else {
-			REQUIRE(std::strcmp(t_name, "bark?!?!") == 0);
-		}
+		thrd_exit(t_results->id);
 	}
-	thrd_exit(t_id);
-}
+} // namespace
 
 TEST_CASE("thread test with new name/id checks", "[thrd][thrd_with_create_attrs]") {
 	thrd_t t0 = {};
@@ -62,7 +71,7 @@ TEST_CASE("thread test with new name/id checks", "[thrd][thrd_with_create_attrs]
 	};
 	ztdc_thrd_attr_stack_size stack_size_attr = {
 		ztdc_thrd_attr_kind_stack_size,
-		1'024 * 16,
+		ZTDC_THRD_MINIMUM_STACK_SIZE,
 	};
 	struct ztdc_thrd_attr_priority {
 		ztdc_thrd_attr_kind kind;
@@ -79,14 +88,14 @@ TEST_CASE("thread test with new name/id checks", "[thrd][thrd_with_create_attrs]
 		&name_attr.kind,
 	};
 
-	int t0_id       = 1;
-	int create_err0 = ztdc_thrd_create_attrs(&t0, thrd_main, &t0_id, ztdc_c_array_size(attrs), attrs);
+	thread_results t0_results = { 1, 0xFFFF, 0xFFFF };
+	int create_err0           = ztdc_thrd_create_attrs(&t0, thrd_main, &t0_results, ztdc_c_array_size(attrs), attrs);
 	REQUIRE(create_err0 == thrd_success);
 
-	int t1_id           = 2;
-	int err_invocations = 0;
-	name_attr.name      = u"bark?!?!";
-	auto err_func       = [&](const ztdc_thrd_attr_kind* kind, int err) -> int {
+	thread_results t1_results = { 2, 0xFFFF, 0xFFFF };
+	int err_invocations       = 0;
+	name_attr.name            = u"bark?!?!";
+	auto err_func             = [&](const ztdc_thrd_attr_kind* kind, int err) -> int {
           REQUIRE(*kind == priority_attr.kind);
           REQUIRE(err == thrd_error);
           ++err_invocations;
@@ -96,14 +105,18 @@ TEST_CASE("thread test with new name/id checks", "[thrd][thrd_with_create_attrs]
 		return (*((decltype(err_func)*)userdata))(kind, err);
 	};
 	int create_err1 = ztdc_thrd_create_attrs_err(
-	     &t1, thrd_main, &t1_id, ztdc_c_array_size(attrs), attrs, err_func_trampoline, &err_func);
+	     &t1, thrd_main, &t1_results, ztdc_c_array_size(attrs), attrs, err_func_trampoline, &err_func);
 	REQUIRE(create_err1 == thrd_success);
 
 	int res0 = 0;
 	int res1 = 0;
 	thrd_join(t0, &res0);
 	thrd_join(t1, &res1);
-	REQUIRE(res0 == 1);
-	REQUIRE(res1 == 2);
+	REQUIRE(res0 == t0_results.id);
+	REQUIRE(t0_results.getname_result == thrd_success);
+	REQUIRE(t0_results.strcmp_result == 0);
+	REQUIRE(res1 == t1_results.id);
+	REQUIRE(t1_results.getname_result == thrd_success);
+	REQUIRE(t1_results.strcmp_result == 0);
 	REQUIRE(err_invocations == 1);
 }

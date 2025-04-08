@@ -115,7 +115,8 @@ int thrd_join(thrd_t __thr, int* __res) {
 	void* __impl_res;
 	int __join_res = pthread_join(__thr, &__impl_res);
 	if (__join_res == 0) {
-		*__res = (int)(intptr_t)__impl_res;
+		memcpy(__res, &__impl_res, sizeof(int));
+		return thrd_success;
 	}
 	return __ztdc_pthread_to_thread_error(__join_res);
 }
@@ -432,7 +433,7 @@ inline static void* __ztdc_pthread_trampoline(void* __userdata) {
 		return __pthread_res;
 	}
 	int __std_res = __func(__func_arg);
-	memcpy(__pthread_res, &__std_res, sizeof(__std_res));
+	memcpy(&__pthread_res, &__std_res, sizeof(__std_res));
 	return __pthread_res;
 }
 
