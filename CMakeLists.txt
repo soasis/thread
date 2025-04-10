@@ -28,7 +28,7 @@
 #
 # ============================================================================>
 
-cmake_minimum_required(VERSION 3.28.0)
+cmake_minimum_required(VERSION 3.31.0)
 
 # # Project kickstart
 # Includes a bunch of basic flags and utilities shared across projects
@@ -174,6 +174,7 @@ target_compile_definitions(ztd.thread
 	PRIVATE
 		ZTD_THREAD_BUILD=1
 		_GNU_SOURCE=1
+		__STDC_WANT_LIB_EXT1__=1
 	PUBLIC
 		$<$<STREQUAL:$<TARGET_PROPERTY:ztd.thread,TYPE>,SHARED_LIBRARY>:ZTD_THREAD_DLL=1>
 		${CMAKE_DL_LIBS}
