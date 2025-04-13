@@ -30,7 +30,7 @@
 
 #include <ztd/thread/version.h>
 
-#if ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
+#if ZTD_IS_ON(ZTD_THREAD_ANY_WIN32_BASED)
 
 #include <ztd/thread/threads.h>
 

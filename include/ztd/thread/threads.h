@@ -41,8 +41,12 @@
 
 #if ZTD_IS_ON(ZTD_CXX)
 #include <cstdint>
+#include <ctime>
+#include <climits>
 #else
 #include <stdint.h>
+#include <time.h>
+#include <limits.h>
 #endif
 
 #if ZTD_IS_ON(ZTD_HEADER_THREADS_H)
@@ -51,26 +55,36 @@
 #else
 #include <threads.h>
 #endif
-#elif ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
-#include <ztd/thread/detail/threads.windows.h>
-#elif ZTD_IS_ON(ZTD_PLATFORM_PTHREADS)
+#elif ZTD_IS_ON(ZTD_THREAD_PTHREAD_BASED)
 #include <ztd/thread/detail/threads.pthreads.h>
+#elif ZTD_IS_ON(ZTD_THREAD_WIN32_BASED)
+#include <ztd/thread/detail/threads.windows.h>
 #else
 #error "Unknown platform."
 #endif
 
+#if ZTD_IS_ON(ZTD_THREAD_PTHREAD_BASED)
 #if ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
-#define __ZTDC_DETAIL_THRD_MAX_SIZE ((1024 * 64) * 2)
-#elif ZTD_IS_ON(ZTD_PLATFORM_PTHREADS)
-#define __ZTDC_DETAIL_THRD_MAX_SIZE 16
+#define __ZTDC_DETAIL_THRD_NAME_MAX_SIZE ((1024 * 64) * 2)
+#else
+#define __ZTDC_DETAIL_THRD_NAME_MAX_SIZE 16
+#endif
+#elif ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
+#define __ZTDC_DETAIL_THRD_NAME_MAX_SIZE ((1024 * 64) * 2)
 #else
 #error "Unknown platform."
 #endif
 
-#if ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
-#define __ZTDC_DETAIL_THRD_MINIMUM_STACK_SIZE 0
-#elif ZTD_IS_ON(ZTD_PLATFORM_PTHREADS)
+#if ZTD_IS_ON(ZTD_THREAD_PTHREAD_BASED)
+#if defined(PTHREAD_STACK_MIN)
 #define __ZTDC_DETAIL_THRD_MINIMUM_STACK_SIZE PTHREAD_STACK_MIN
+#else
+/* typically 16 kiB */
+#define __ZTDC_DETAIL_THRD_MINIMUM_STACK_SIZE (1024 * 16)
+#endif
+#elif ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
+/* typically 64 kiB */
+#define __ZTDC_DETAIL_THRD_MINIMUM_STACK_SIZE (1024 * 64)
 #else
 #error "Unknown platform."
 #endif
@@ -185,9 +199,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __arg, 
 
 
 typedef
-#if ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
-     void*
-#elif ZTD_IS_ON(ZTD_PLATFORM_PTHREADS)
+#if ZTD_IS_ON(ZTD_THREAD_PTHREAD_BASED)
 #if ZTD_IS_OFF(ZTD_HEADER_THREADS_H)
      pthread_t
 #else
@@ -197,6 +209,8 @@ typedef
      unsigned long
 #endif
 #endif
+#elif ZTD_IS_ON(ZTD_THREAD_ANY_WIN32_BASED)
+     void*
 #else
 #error "Unknown platform."
 #endif

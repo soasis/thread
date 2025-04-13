@@ -30,7 +30,7 @@
 
 #include <ztd/thread/version.h>
 
-#if ZTD_IS_ON(ZTD_PLATFORM_PTHREADS)
+#if ZTD_IS_ON(ZTD_THREAD_PTHREAD_BASED)
 
 #include <ztd/thread/threads.h>
 
@@ -39,6 +39,7 @@
 #include <ztd/idk/static_assert.h>
 #include <ztd/idk/null.h>
 #include <ztd/idk/size.h>
+#include <ztd/idk/unreachable.h>
 #include <ztd/cuneicode.h>
 
 
@@ -123,9 +124,9 @@ int thrd_join(thrd_t __thr, int* __res) {
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
-ZTD_USE(ZTD_ATTR_NO_RETURN)
 void thrd_exit(int __res) {
 	pthread_exit((void*)(intptr_t)(__res));
+	ZTD_UNREACHABLE();
 }
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
