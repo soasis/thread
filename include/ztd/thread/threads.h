@@ -470,12 +470,12 @@ int ztdc_thrd_get_c32name(thrd_t __thr, size_t __buffer_size, ztd_char32_t* __bu
 /// out of internal space. String sizes less than this (including the null terminator).
 ///
 /// @remarks This value may be "0" and thus should have its use guarded when used for e.g. an array size.
-#define ZTDC_THRD_MAXIMUM_NAME_SIZE __ZTDC_DETAIL_THRD_NAME_MAX_SIZE
+#define ZTDC_THRD_MAXIMUM_NAME_SIZE ((size_t)__ZTDC_DETAIL_THRD_NAME_MAX_SIZE)
 
 /// @brief The absolute minimum stack size an implementation can tolerate.
 ///
 /// @remarks This is only a suggestion: implementations can raise or lower stack sizes through means at run time and
 /// compilation time.
-#define ZTDC_THRD_MINIMUM_STACK_SIZE __ZTDC_DETAIL_THRD_MINIMUM_STACK_SIZE
+#define ZTDC_THRD_MINIMUM_STACK_SIZE ((size_t)__ZTDC_DETAIL_THRD_MINIMUM_STACK_SIZE)
 
 #endif
