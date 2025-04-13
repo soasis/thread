@@ -597,10 +597,12 @@ int __ztdc_pthreads_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, vo
 			__attr_err                            = __ztdc_pthread_to_thread_error(
                     pthread_attr_setstack(&__impl_attrs, __attr->buffer, __attr->size));
 		} break;
+#if ZTD_IS_OFF(ZTD_C_STDLIB_UCRT)
 		case ztdc_thrd_attr_kind__stack_guard_size: {
 			ztdc_thrd_attr__stack_guard_size* __attr = (ztdc_thrd_attr__stack_guard_size*)__attr_kind;
 			__attr_err = __ztdc_pthread_to_thread_error(pthread_attr_setguardsize(&__impl_attrs, __attr->size));
 		} break;
+#endif
 		default:
 			// unhandled attributes are considered errors
 			__attr_err = thrd_error;
