@@ -30,4 +30,7 @@
 
 include(GenerateInclusionTest)
 
-generate_inclusion_test(NAME "ztd.thread.tests.inclusion" ROOTS "../../include" LINK_LIBRARIES ztd::thread)
+generate_inclusion_test(NAME "ztd.thread.tests.inclusion"
+	ROOTS "../../include"
+	LINK_LIBRARIES ztd::thread
+)

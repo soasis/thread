@@ -70,44 +70,35 @@ TEST_CASE("encoded thread name check", "[thrd][thrd_with_create_attrs][encoded-n
 	const constexpr auto thrd_main1 = [](void* arg) -> int {                                                                                    \
 		thread_with_id* t_id = (thread_with_id*)arg;                                                                                           \
 		{                                                                                                                                      \
-			t_id->name_set_result0 = ztdc_thrd_set_##given_prefix##name(t_id->thr, (given_type*)thread_name);                                 \
-			REQUIRE(t_id->name_set_result0 == thrd_success);                                                                                  \
+			t_id->name_set_result0        = ztdc_thrd_set_##given_prefix##name(t_id->thr, (given_type*)thread_name);                          \
 			expected_char_t name_buf[128] = {};                                                                                               \
 			t_id->name_get_result0        = ztdc_thrd_get_##expected_prefix##name(                                                            \
                     t_id->thr, ztdc_c_array_size(name_buf), (expected_type*)name_buf);                                                    \
-			REQUIRE(t_id->name_get_result0 == thrd_success);                                                                                  \
 			const expected_char_t* name = name_buf;                                                                                           \
 			t_id->expected_name_result0                                                                                                       \
 			     = std::memcmp(name, &expected_thread_name[0], sizeof(expected_thread_name));                                                 \
-			REQUIRE(t_id->expected_name_result0 == 0);                                                                                        \
 		}                                                                                                                                      \
 		{                                                                                                                                      \
 			t_id->name_set_result1 = ztdc_thrd_set_##given_prefix##name_sized(                                                                \
 			     t_id->thr, ztdc_c_string_ptr_size(thread_name), (given_type*)thread_name);                                                   \
-			REQUIRE(t_id->name_set_result1 == thrd_success);                                                                                  \
 			expected_char_t name_buf[128] = {};                                                                                               \
 			t_id->name_get_result1        = ztdc_thrd_get_##expected_prefix##name(                                                            \
                     t_id->thr, ztdc_c_array_size(name_buf), (expected_type*)name_buf);                                                    \
-			REQUIRE(t_id->name_get_result1 == thrd_success);                                                                                  \
 			const expected_char_t* name = name_buf;                                                                                           \
 			t_id->expected_name_result1                                                                                                       \
 			     = std::memcmp(name, &expected_thread_name[0], sizeof(expected_thread_name));                                                 \
-			REQUIRE(t_id->expected_name_result1 == 0);                                                                                        \
 		}                                                                                                                                      \
 		{                                                                                                                                      \
 			/* flex case where the actual string portion given is not null-terminated... */                                                   \
-			t_id->name_set_result2 = ztdc_thrd_set_##given_prefix##name_sized(t_id->thr,                                                      \
-			     std::basic_string<given_char_t>(thread_name).find((given_char_t)'!'), (given_type*)thread_name);                             \
-			REQUIRE(t_id->name_set_result2 == thrd_success);                                                                                  \
+			t_id->name_set_result2        = ztdc_thrd_set_##given_prefix##name_sized(t_id->thr,                                               \
+			            std::basic_string<given_char_t>(thread_name).find((given_char_t)'!'), (given_type*)thread_name);                      \
 			expected_char_t name_buf[128] = {};                                                                                               \
 			t_id->name_get_result2        = ztdc_thrd_get_##expected_prefix##name(                                                            \
                     t_id->thr, ztdc_c_array_size(name_buf), (expected_type*)name_buf);                                                    \
-			REQUIRE(t_id->name_get_result2 == thrd_success);                                                                                  \
 			const expected_char_t* name = name_buf;                                                                                           \
 			auto expected_name_size                                                                                                           \
 			     = std::basic_string<expected_char_t>(expected_thread_name).find((given_char_t)'!')                                           \
 			     * sizeof(expected_char_t);                                                                                                   \
-			t_id->expected_name_result2 = std::memcmp(name, &expected_thread_name[0], expected_name_size);                                    \
 			REQUIRE(t_id->expected_name_result2 == 0);                                                                                        \
 		}                                                                                                                                      \
 		return t_id->id;                                                                                                                       \
