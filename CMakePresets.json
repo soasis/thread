@@ -21,8 +21,7 @@
 				"ZTD_THREAD_GENERATE_SINGLE": true,
 				"ZTD_THREAD_EXAMPLES": true,
 				"ZTD_THREAD_TESTS": true,
-				"ZTD_THREAD_DOCUMENTATION": false,
-				"ZTD_THREAD_DOCUMENTATION_NO_SPHINX": false
+				"ZTD_THREAD_DOCUMENTATION": false
 			}
 		},
 		{
