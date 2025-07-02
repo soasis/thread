@@ -35,21 +35,25 @@ There's only a limited number of APIs to document, as the rest is covered by the
 
 
 
-``ztdc_thrd_native_handle_t`` type and function
------------------------------------------------
+``ztdc_thrd_native_handle_t`` type and functions
+------------------------------------------------
 
 .. doxygentypedef:: ztdc_thrd_native_handle_t
 
-.. doxygenfunction:: ztdc_thrd_get_native_handle
+.. doxygenfunction:: ztdc_thrd_native_handle
+
+.. doxygenfunction:: ztdc_thrd_current_native_handle
 
 
 
-``ztdc_thrd_id_t`` type and function
-------------------------------------
+``ztdc_thrd_id_t`` type and functions
+-------------------------------------
 
 .. doxygentypedef:: ztdc_thrd_id_t
 
-.. doxygenfunction:: ztdc_thrd_get_id
+.. doxygenfunction:: ztdc_thrd_id
+
+.. doxygenfunction:: ztdc_thrd_current_id
 
 
 
@@ -88,6 +92,10 @@ This enumeration is the core of the library. Every standard
 ----------------------------------------
 
 These are standard structures, useful to dictate behavior across platforms. Certain platforms have different limits on different parts of the attributes for threads: it may take some experimentation to make it work. Every structure has a :cpp:enum:`ztdc_thrd_attr_kind` as the first member in order for the enumerator's address to double as the address of the structure, and allow for well-defined casting to the appropriate type.
+
+.. note::
+	
+	All attributes are processed on the thread that invoked one of the attribute-handling thread creation functions, except for :cpp:struct:`ztdc_thrd_attr_custom_on_new`, which is invoked on the new thread. :cpp:struct:`ztdc_thrd_attr_custom_on_new` and :cpp:struct:`ztdc_thrd_attr_custom_on_origin` are always invoked after all other attributes have been processed in `attrs` (and no errors have occurred). :cpp:struct:`ztdc_thrd_attr_custom_on_new` is processed before :cpp:struct:`ztdc_thrd_attr_custom_on_origin`, and none of their functions are ever invoked in parallel. The processing of all attributes synchronizes before the start of the actual passed-in thread function.
 
 .. doxygenstruct:: ztdc_thrd_attr_name
 	:members:
@@ -129,6 +137,12 @@ These are standard structures, useful to dictate behavior across platforms. Cert
 	:members:
 
 .. doxygenstruct:: ztdc_thrd_attr_detached
+	:members:
+
+.. doxygenstruct:: ztdc_thrd_attr_custom_on_new
+	:members:
+
+.. doxygenstruct:: ztdc_thrd_attr_custom_on_origin
 	:members:
 
 

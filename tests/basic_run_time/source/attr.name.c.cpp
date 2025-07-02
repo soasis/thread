@@ -48,7 +48,7 @@ TEST_CASE("thread raw name check", "[thrd][thrd_with_create_attrs][name]") {
 		int expected_name_result;
 	} thread_results;
 
-	const constexpr auto thrd_main = [](void* arg) -> int {
+	const constexpr auto thread_main = [](void* arg) -> int {
 		thread_results* t_results   = (thread_results*)arg;
 		unsigned char name_buf[128] = {};
 		t_results->name_get_result = ztdc_thrd_get_native_name(thrd_current(), ztdc_c_array_size(name_buf), name_buf);
@@ -70,7 +70,7 @@ TEST_CASE("thread raw name check", "[thrd][thrd_with_create_attrs][name]") {
 	};
 
 	thread_results t0_results = { 0xF3, 0xFFFF, 0xFFFF };
-	int create_err            = ztdc_thrd_create_attrs(&t0, thrd_main, &t0_results, ztdc_c_array_size(attrs), attrs);
+	int create_err            = ztdc_thrd_create_attrs(&t0, thread_main, &t0_results, ztdc_c_array_size(attrs), attrs);
 	REQUIRE(create_err == thrd_success);
 	int res0 = 0;
 	thrd_join(t0, &res0);

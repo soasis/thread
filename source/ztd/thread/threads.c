@@ -36,6 +36,31 @@
 #include <ztd/idk/static_assert.h>
 #include <ztd/idk/size.h>
 
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+const ztdc_thrd_native_handle_t ztdc_thrd_null_native_handle =
+#if ZTD_IS_ON(ZTD_THREAD_PTHREAD_BASED)
+#if ZTD_IS_OFF(ZTD_HEADER_THREADS_H)
+     (ztdc_thrd_native_handle_t)NULL
+#else
+#endif
+#else
+     (ztdc_thrd_native_handle_t)NULL
+#endif
+     ;
+
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+const ztdc_thrd_id_t ztdc_thrd_null_id =
+#if ZTD_IS_ON(ZTD_THREAD_INTEGER_THREAD_ID)
+#if ZTD_IS_ON(ZTD_THREAD_ANY_WIN32_BASED)
+     (ztdc_thrd_id_t)0u
+#else
+     (ztdc_thrd_id_t)-1
+#endif
+#else
+     (ztdc_thrd_id_t)NULL
+#endif
+     ;
+
 inline static int __ztdc_ignore_all_thrd_errors(const ztdc_thrd_attr_kind* __kind, int __err, void* __userdata) {
 	(void)__kind;
 	(void)__err;
@@ -84,25 +109,79 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
-ztdc_thrd_native_handle_t ztdc_thrd_get_native_handle(thrd_t __thr) {
+ztdc_thrd_native_handle_t ztdc_thrd_current_native_handle() {
 #if ZTD_IS_ON(ZTD_THREAD_PTHREAD_BASED)
-	return __thr;
+	return (ztdc_thrd_native_handle_t)thrd_current();
 #elif ZTD_IS_ON(ZTD_THREAD_ANY_WIN32_BASED)
+	thrd_t __thr = thrd_current();
 	return *__ztdc_win32_handle_ptr(&__thr);
 #else
 #error "Unknown platform."
 #endif
 }
 
+
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
-ztdc_thrd_id_t ztdc_thrd_get_id(thrd_t __thr) {
-#if ZTD_IS_ON(ZTD_THREAD_PTHREAD_BASED)
-	return (ztdc_thrd_id_t)__thr;
-#elif ZTD_IS_ON(ZTD_THREAD_ANY_WIN32_BASED)
-	return *__ztdc_win32_handle_id(&__thr);
+ztdc_thrd_native_handle_t ztdc_thrd_native_handle(thrd_t __thr) {
+#if ZTD_IS_ON(ZTD_THREAD_ANY_WIN32_BASED)
+	return *__ztdc_win32_handle_ptr(&__thr);
+#elif ZTD_IS_ON(ZTD_THREAD_PTHREAD_BASED)
+	return (ztdc_thrd_native_handle_t)__thr;
 #else
 #error "Unknown platform."
+	if (thrd_equal(__thr, thrd_current())) {
+		return ztdc_thrd_current_native_handle();
+	}
+	return ztdc_thrd_null_native_handle;
+#endif
+}
+
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+ztdc_thrd_id_t ztdc_thrd_current_id() {
+	// what the fuck is going on, lol.
+#if ZTD_IS_ON(ZTD_THREAD_ANY_WIN32_BASED)
+	return *__ztdc_win32_handle_id(&__thr);
+#elif ZTD_IS_ON(ZTD_PLATFORM_DRAGONFLY_BSD)
+	return (ztdc_thrd_id_t)lwp_gettid();
+#elif ZTD_IS_ON(ZTD_PLATFORM_FREE_BSD)
+#if ZTD_IS_ON(ZTD_HEADER_PTHREAD_NP_H)
+	// this... MIGHT only be available on a select handful of BSDs, even with the header??
+	return (ztdc_thrd_id_t)pthread_getthreadid_np();
+#else
+	ztdc_static_assert(sizeof(long) <= sizeof(ztdc_thrd_id_t), "platform ID is too big?!");
+	long __platid = (long)ztdc_thrd_null_id;
+	thr_self(&__platid);
+	return (ztdc_thrd_id_t)__platid;
+#endif
+#elif ZTD_IS_ON(ZTD_PLATFORM_NET_BSD)
+	ztdc_static_assert(sizeof(lwpid_t) <= sizeof(ztdc_thrd_id_t), "platform ID is too big?!");
+	return (ztdc_thrd_id_t)_lwp_self();
+#elif ZTD_IS_ON(ZTD_PLATFORM_MAC_OS) || ZTD_IS_ON(ZTD_PLATFORM_SUNOS)
+	return (ztdc_thrd_id_t)pthread_self();
+#elif ZTD_IS_ON(ZTD_PLATFORM_LINUX)
+	return (ztdc_thrd_id_t)gettid();
+#else
+	return ztdc_thrd_null_id;
+#endif
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+ztdc_thrd_id_t ztdc_thrd_id(thrd_t __thr) {
+	if (thrd_equal(__thr, thrd_current())) {
+		return ztdc_thrd_current_id();
+	}
+	// what the fuck is going on, lol.
+#if ZTD_IS_ON(ZTD_THREAD_ANY_WIN32_BASED)
+	return *__ztdc_win32_handle_id(&__thr);
+#elif ZTD_IS_ON(ZTD_PLATFORM_MAC_OS)
+	return (ztdc_thrd_id_t)__thr;
+#else
+	// well, shit. just stop there I guess
+	return ztdc_thrd_null_id;
 #endif
 }
 

@@ -24,7 +24,7 @@ author: str = "ThePhD & Shepherd's Oasis, LLC"
 
 # The full version, including alpha/beta/rc tags
 #
-release: str = '0.0.0'
+release: str = '1.0.0'
 
 # -- General configuration ---------------------------------------------------
 
@@ -68,7 +68,7 @@ html_extra_path: typing.List[str] = []
 rst_prolog: str = """
 .. |ub| replace:: ☢️☢️Undefined Behavior☢️☢️
 
-.. |specializations_okay_different_types| replace:: User Specializations: ✔️ Okay! You can add other types to this classification by specializing the class template. Your specialization must have a type definition named ``type`` (as in, ``using type = ...;`` or `typedef ... type;``) inside of the class specialization that is ``public:``\ ly accessible. Note that specializing any type not explicitly marked with this notice is |ub|.
+.. |specializations_okay_different_types| replace:: User Specializations: ✔️ Okay! You can add other types to this classification by specializing the class template. Your specialization must have a type definition named ``type`` (as in, ``using type = ...;`` or ``typedef ... type;``) inside of the class specialization that is ``public:``-ly accessible. Note that specializing any type not explicitly marked with this notice is |ub|.
 
 .. |specializations_okay_true_false_type| replace:: User Specializations: ✔️ Okay! You can add other types to this classification by specializing the class template to a definition that derives from ``std::true_type``, or turn it off explicitly by having a definition that derives from ``std::false_type``. Note that specializing any type not explicitly marked with this notice is |ub|.
 

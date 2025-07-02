@@ -44,7 +44,7 @@ set(CMAKE_PROJECT_INCLUDE ${ZTD_CMAKE_PROJECT_PRELUDE})
 # informs about the project, gives a description, version and MOST IMPORTANTLY
 # the languages the project is going to use. Required.
 project(ztd.thread
-	VERSION 0.0.0
+	VERSION 1.0.0
 	DESCRIPTION "A small thread experimentation library, for C11-style threads!"
 	HOMEPAGE_URL "https://ztdthread.rtfd.io/"
 	LANGUAGES CXX C)
@@ -179,6 +179,12 @@ target_compile_definitions(ztd.thread
 		$<$<STREQUAL:$<TARGET_PROPERTY:ztd.thread,TYPE>,SHARED_LIBRARY>:ZTD_THREAD_DLL=1>
 		${CMAKE_DL_LIBS}
 )
+if (MSVC)
+	target_compile_options(ztd.thread
+		PRIVATE
+		/experimental:c11atomics
+	)
+endif()
 
 if(ZTD_THREAD_IS_TOP_LEVEL_PROJECT)
 	target_compile_options(ztd.thread

@@ -139,7 +139,7 @@ int thrd_detach(thrd_t __thr) {
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
 int thrd_equal(thrd_t __left, thrd_t __right) {
-	return memcmp(&__left, &__right, sizeof(thrd_t)) == 0;
+	return pthread_equal(__left, __right);
 }
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
@@ -188,15 +188,16 @@ typedef enum __ztdc_encoding_name {
 typedef struct __ztdc_pthread_trampoline_t {
 	thrd_start_t __func;
 	void* __func_arg;
-#if ZTD_IS_ON(ZTD_THREAD_THREADS_REQUIRE_SYNCHRONIZATION)
+	const ztdc_thrd_attr_custom_on_new* __custom_on_new_attr;
 	atomic_bool* __sync_until;
 	atomic_bool* __sync_still_ok;
 	int* __sync_result;
 	const ztdc_thrd_attr_kind** __sync_kind;
+	ztdc_thrd_native_handle_t* __sync_native_handle;
+	ztdc_thrd_id_t* __sync_id;
 #if ZTD_IS_ON(ZTD_THREAD_THREADS_NAME_SET_INSIDE)
 	char __name[ZTD_USE(ZTD_THREAD_INTERMEDIATE_BUFFER_SUGGESTED_BYTE_SIZE)];
 	bool __name_set;
-#endif
 #endif
 } __ztdc_pthread_trampoline_t;
 
@@ -362,24 +363,29 @@ inline static int __ztdc_pthread_prepare_name_trampoline(pthread_attr_t* __impl_
 inline static void* __ztdc_pthread_trampoline(void* __userdata) {
 	ztdc_static_assert(
 	     sizeof(void*) >= sizeof(int), "size of `int` is too large for a `void*`: trampoline will not work");
-	thrd_start_t __func                     = NULL;
-	void* __func_arg                        = NULL;
-	int* __sync_result                      = NULL;
-	atomic_bool* __sync_until               = NULL;
-	atomic_bool* __sync_still_ok            = NULL;
-	const ztdc_thrd_attr_kind** __sync_kind = NULL;
-#if ZTD_IS_ON(ZTD_THREAD_THREADS_NAME_SET_INSIDE)
-	int __pre_err = thrd_success;
-#endif
+	thrd_start_t __func                                      = NULL;
+	void* __func_arg                                         = NULL;
+	const ztdc_thrd_attr_custom_on_new* __custom_on_new_attr = NULL;
+	int* __sync_result                                       = NULL;
+	atomic_bool* __sync_until                                = NULL;
+	atomic_bool* __sync_still_ok                             = NULL;
+	const ztdc_thrd_attr_kind** __sync_kind                  = NULL;
+	int __pre_err                                            = thrd_success;
+	thrd_t __thr                                             = thrd_current();
+	ztdc_thrd_native_handle_t __self_handle                  = ztdc_thrd_current_native_handle();
+	ztdc_thrd_id_t __self_id                                 = ztdc_thrd_current_id();
 	{
 		__ztdc_pthread_trampoline_t* __trampoline_userdata = (__ztdc_pthread_trampoline_t*)__userdata;
 		__func                                             = __trampoline_userdata->__func;
 		__func_arg                                         = __trampoline_userdata->__func_arg;
-#if ZTD_IS_ON(ZTD_THREAD_THREADS_REQUIRE_SYNCHRONIZATION)
-		__sync_result   = __trampoline_userdata->__sync_result;
-		__sync_until    = __trampoline_userdata->__sync_until;
-		__sync_still_ok = __trampoline_userdata->__sync_still_ok;
-		__sync_kind     = __trampoline_userdata->__sync_kind;
+		__sync_result                                      = __trampoline_userdata->__sync_result;
+		__sync_until                                       = __trampoline_userdata->__sync_until;
+		__sync_still_ok                                    = __trampoline_userdata->__sync_still_ok;
+		__sync_kind                                        = __trampoline_userdata->__sync_kind;
+		__custom_on_new_attr                               = __trampoline_userdata->__custom_on_new_attr;
+
+		*(__trampoline_userdata->__sync_native_handle) = __self_handle;
+		*(__trampoline_userdata->__sync_id)            = __self_id;
 #if ZTD_IS_ON(ZTD_THREAD_THREADS_NAME_SET_INSIDE)
 		if (__trampoline_userdata->__name_set) {
 #if ZTD_IS_ON(ZTD_PLATFORM_MAC_OS)
@@ -394,11 +400,10 @@ inline static void* __ztdc_pthread_trampoline(void* __userdata) {
 			// also I am too lazy to create a thread in "stopped" mode, then set up the name while I
 			// still have thrd_t, and then start it up once it's set. It would save on the malloc(...) for
 			// the __name array...
-			pthread_t __self_thread = pthread_self();
-#if ZTD_IS_ON(ZTD_C_STDLIB_BSD) && ZTD_IS_ON(ZTD_PLATFORM_NETBSD)
-			__pre_err = __ztdc_pthread_to_thread_error(
-			     pthread_setname_np(__self_thread, __trampoline_userdata->__name, 0)); // name + void* arg -- huh??
-#elif ZTD_IS_ON(ZTD_C_STDLIB_BSD) && (ZTD_IS_ON(ZTD_PLATFORM_FREEBSD) || ZTD_IS_ON(ZTD_PLATFORM_OPENBSD))
+#if ZTD_IS_ON(ZTD_C_STDLIB_BSD) && ZTD_IS_ON(ZTD_PLATFORM_NET_BSD)
+			__pre_err = __ztdc_pthread_to_thread_error(pthread_setname_np(
+			     __self_thread, __trampoline_userdata->__name, NULL)); // name + void* arg -- huh??
+#elif ZTD_IS_ON(ZTD_C_STDLIB_BSD) && (ZTD_IS_ON(ZTD_PLATFORM_FREE_BSD) || ZTD_IS_ON(ZTD_PLATFORM_OPEN_BSD))
 			// same as most other *nix but different spelling
 			pthread_set_name_np(__self_thread, __trampoline_userdata->__name);
 #else
@@ -410,11 +415,9 @@ inline static void* __ztdc_pthread_trampoline(void* __userdata) {
 		}
 #endif
 		free(__trampoline_userdata);
-#endif
 	}
-	void* __pthread_res = 0;
+	void* __pthread_res = NULL;
 	memset(&__pthread_res, 0, sizeof(void*)); // nullptr rep does not have to be "all bits zero" on all platforms, lol.
-#if ZTD_IS_ON(ZTD_THREAD_THREADS_REQUIRE_SYNCHRONIZATION)
 	if (__pre_err != thrd_success) {
 		*__sync_result = __pre_err;
 		atomic_store(__sync_until, false);
@@ -425,10 +428,28 @@ inline static void* __ztdc_pthread_trampoline(void* __userdata) {
 			return __pthread_res;
 		}
 	}
-#endif
-#if ZTD_IS_ON(ZTD_THREAD_THREADS_REQUIRE_SYNCHRONIZATION)
+	if (__custom_on_new_attr) {
+		int __custom_err
+		     = __custom_on_new_attr->func(__thr, __self_handle, __self_id, __custom_on_new_attr->userdata);
+		if (__custom_err != thrd_success) {
+			*__sync_result = __pre_err;
+			atomic_store(__sync_until, false);
+			while (atomic_load(__sync_still_ok)) {
+				// wait for feedback for this error.
+			}
+			if (*__sync_result != thrd_success) {
+				return __pthread_res;
+			}
+		}
+	}
 	atomic_store(__sync_until, false);
-#endif
+	while (atomic_load(__sync_still_ok)) {
+		// wait for feedback for on whether or not a potential custom_on_origin has finished.
+	}
+	if (*__sync_result != thrd_success) {
+		return __pthread_res;
+	}
+	// okay, attribute processing done. We should be good to go!
 	if (!__func) {
 		// this should never happen, but we're just checking
 		return __pthread_res;
@@ -451,17 +472,22 @@ int __ztdc_pthreads_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, vo
 	if (__trampoline_userdata == NULL) {
 		return thrd_nomem;
 	}
-	__trampoline_userdata->__func     = __func;
-	__trampoline_userdata->__func_arg = __func_arg;
-#if ZTD_IS_ON(ZTD_THREAD_THREADS_REQUIRE_SYNCHRONIZATION)
-	const ztdc_thrd_attr_kind* __sync_kind = NULL;
-	atomic_bool __sync_until               = true;
-	atomic_bool __sync_still_ok            = true;
-	__trampoline_userdata->__sync_until    = &__sync_until;
-	__trampoline_userdata->__sync_still_ok = &__sync_still_ok;
-	__trampoline_userdata->__sync_result   = &__sync_result;
-	__trampoline_userdata->__sync_kind     = &__sync_kind;
-#endif
+	const ztdc_thrd_attr_kind* __sync_kind                         = NULL;
+	atomic_bool __sync_until                                       = true;
+	atomic_bool __sync_still_ok                                    = true;
+	ztdc_thrd_native_handle_t __sync_native_handle                 = ztdc_thrd_null_native_handle;
+	ztdc_thrd_id_t __sync_id                                       = ztdc_thrd_null_id;
+	const ztdc_thrd_attr_custom_on_origin* __custom_on_origin_attr = NULL;
+	__trampoline_userdata->__func                                  = __func;
+	__trampoline_userdata->__func_arg                              = __func_arg;
+	__trampoline_userdata->__sync_until                            = &__sync_until;
+	__trampoline_userdata->__sync_still_ok                         = &__sync_still_ok;
+	__trampoline_userdata->__sync_result                           = &__sync_result;
+	__trampoline_userdata->__sync_kind                             = &__sync_kind;
+	__trampoline_userdata->__sync_native_handle                    = &__sync_native_handle;
+	__trampoline_userdata->__sync_id                               = &__sync_id;
+	__trampoline_userdata->__custom_on_new_attr                    = NULL;
+
 	pthread_attr_t __impl_attrs = { 0 };
 	int __impl_attr_init_res    = pthread_attr_init(&__impl_attrs);
 	if (__impl_attr_init_res != 0) {
@@ -592,6 +618,14 @@ int __ztdc_pthreads_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, vo
 			__attr_err                      = __ztdc_pthread_to_thread_error(pthread_attr_setdetachstate(
                     &__impl_attrs, __attr->detached ? PTHREAD_CREATE_DETACHED : PTHREAD_CREATE_JOINABLE));
 		} break;
+		case ztdc_thrd_attr_kind_custom_on_origin: {
+			ztdc_thrd_attr_custom_on_origin* __attr = (ztdc_thrd_attr_custom_on_origin*)__attr_kind;
+			__custom_on_origin_attr                 = __attr;
+		} break;
+		case ztdc_thrd_attr_kind_custom_on_new: {
+			ztdc_thrd_attr_custom_on_new* __attr        = (ztdc_thrd_attr_custom_on_new*)__attr_kind;
+			__trampoline_userdata->__custom_on_new_attr = __attr;
+		} break;
 		case ztdc_thrd_attr_kind__stack_storage: {
 			ztdc_thrd_attr__stack_storage* __attr = (ztdc_thrd_attr__stack_storage*)__attr_kind;
 			__attr_err                            = __ztdc_pthread_to_thread_error(
@@ -634,7 +668,7 @@ int __ztdc_pthreads_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, vo
 		free(__trampoline_userdata);
 		return __ztdc_pthread_to_thread_error(__result);
 	}
-#if ZTD_IS_ON(ZTD_THREAD_THREADS_REQUIRE_SYNCHRONIZATION)
+
 	while (atomic_load(&__sync_until)) {
 		// spinlock until the thread is started and all internal work is okay.
 	}
@@ -649,9 +683,32 @@ int __ztdc_pthreads_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, vo
 			return __post_thread_start_results;
 		}
 	}
-	// all is done, let the thread go ahead with the correct data.
+
+	if (!__custom_on_origin_attr) {
+		// all is done, let the thread go ahead with the correct data.
+		atomic_store(&__sync_still_ok, false);
+		return thrd_success;
+	}
+
+	int __custom_err
+	     = __custom_on_origin_attr->func(*__thr, __sync_native_handle, __sync_id, __custom_on_origin_attr->userdata);
+	if (__custom_err == thrd_success) {
+		// if this is successful, we can just go
+		atomic_store(&__sync_still_ok, false);
+		return thrd_success;
+	}
+
+	// something went wrong, adjust and check if we need to bail
+	int __adjusted_custom_err = __attr_err_func(__sync_kind, __custom_err, __attr_err_func_arg);
+	if (__adjusted_custom_err != thrd_success) {
+		__sync_result = __adjusted_custom_err;
+		// send back the result to the thread so it knows to either go or quit
+		atomic_store(&__sync_still_ok, false);
+		return __adjusted_custom_err;
+	}
+
+	// Otherwise, everything is fine
 	atomic_store(&__sync_still_ok, false);
-#endif
 	return thrd_success;
 }
 

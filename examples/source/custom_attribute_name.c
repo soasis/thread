@@ -33,6 +33,41 @@
 #include <ztd/idk/assert.h>
 
 #include <stdio.h>
+#if ZTD_IS_ON(ZTD_PLATFORM_MAC_OS)
+#include <pthread.h>
+#elif ZTD_IS_ON(ZTD_C_STDLIB_BSD) && ZTD_IS_ON(ZTD_PLATFORM_NET_BSD)
+#include <pthread.h>
+#elif ZTD_IS_ON(ZTD_C_STDLIB_BSD) && (ZTD_IS_ON(ZTD_PLATFORM_FREE_BSD) || ZTD_IS_ON(ZTD_PLATFORM_OPEN_BSD))
+#include <pthread.h>
+#elif ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
+#define NOMINMAX 1
+#define WIN32_LEAN_AND_MEAN 1
+#define VC_EXTRALEAN 1
+#include <Windows.h>
+#endif
+
+enum { EXPECTED_MARKER_VALUE = 32 };
+
+inline static int thrd_custom_name(thrd_t t, ztdc_thrd_native_handle_t t_handle, ztdc_thrd_id_t t_id, void* userdata) {
+	(void)t;
+	(void)t_handle;
+	(void)t_id;
+	int custom_marker = *((const int*)userdata);
+	printf("thrd_custom_name called with custom maker: %d\n", custom_marker);
+	if (custom_marker != EXPECTED_MARKER_VALUE) {
+		return thrd_error;
+	}
+#if ZTD_IS_ON(ZTD_PLATFORM_MAC_OS)
+	pthread_setname_np("meow!");
+#elif ZTD_IS_ON(ZTD_C_STDLIB_BSD) && ZTD_IS_ON(ZTD_PLATFORM_NET_BSD)
+	pthread_setname_np(t_handle, "meow!", NULL);
+#elif ZTD_IS_ON(ZTD_C_STDLIB_BSD) && (ZTD_IS_ON(ZTD_PLATFORM_FREE_BSD) || ZTD_IS_ON(ZTD_PLATFORM_OPEN_BSD))
+	pthread_set_name_np(t_handle, "meow!");
+#elif ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
+	SetThreadDescription(t_handle, L"meow!");
+#endif
+	return thrd_success;
+}
 
 inline static int thrd_main(void* arg) {
 	int t_id           = *(int*)arg;
@@ -45,45 +80,25 @@ inline static int thrd_main(void* arg) {
 
 int main(void) {
 	thrd_t t0 = { 0 };
-	thrd_t t1 = { 0 };
 
-	ztdc_thrd_attr_c32name name_attr = { // format
-		.kind = ztdc_thrd_attr_kind_c32name,
-		.name = U"meow?!"
-	};
-	ztdc_thrd_attr_stack_size stack_size_attr = {
-		.kind = ztdc_thrd_attr_kind_stack_size,
-		.size = 1024 * 16,
-	};
-	const struct ztdc_thrd_attr_priority {
-		ztdc_thrd_attr_kind kind;
-		int priority;
-	} priority_attr = {
-		// some custom attribute or whatever
-		.kind     = 0x12345678,
-		.priority = INT_MAX,
+	int custom_marker = EXPECTED_MARKER_VALUE;
+
+	const ztdc_thrd_attr_custom_on_new custom_attr = {
+		.kind     = ztdc_thrd_attr_kind_custom_on_new,
+		.func     = thrd_custom_name,
+		.userdata = &custom_marker,
 	};
 
 	const ztdc_thrd_attr_kind* attrs[] = {
-		&priority_attr.kind,
-		&stack_size_attr.kind,
-		&name_attr.kind,
+		&custom_attr.kind,
 	};
 
 	int t0_id       = 0;
 	int create_err0 = ztdc_thrd_create_attrs(&t0, thrd_main, &t0_id, ztdc_c_array_size(attrs), attrs);
 	ZTD_ASSERT(create_err0 == thrd_success);
 
-	name_attr.name  = U"bark?!?!";
-	int t1_id       = 1;
-	int create_err1 = ztdc_thrd_create_attrs(&t1, thrd_main, &t1_id, ztdc_c_array_size(attrs), attrs);
-	ZTD_ASSERT(create_err1 == thrd_success);
-
 	int res0 = 0;
-	int res1 = 0;
 	thrd_join(t0, &res0);
-	thrd_join(t1, &res1);
 	ZTD_ASSERT(res0 == 0);
-	ZTD_ASSERT(res1 == 1);
 	return 0;
 }

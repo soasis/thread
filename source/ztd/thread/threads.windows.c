@@ -42,9 +42,14 @@
 
 #if ZTD_IS_ON(ZTD_CXX)
 #include <cstdlib>
+#include <atomic>
+#if ZTD_IS_ON(ZTD_HEADER_CSTDATOMIC)
+#include <cstdatomic>
+#endif
 #else
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdatomic.h>
 #endif
 
 static inline int __ztdc_win32_to_thread_error(int __code) {
@@ -138,8 +143,13 @@ int thrd_detach(thrd_t __thr) {
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
 int thrd_equal(thrd_t __left, thrd_t __right) {
-	return *__ztdc_win32_handle_id(__left) == *__ztdc_win32_handle_id(__right)
-	     && *__ztdc_win32_handle_ptr(__left) == *__ztdc_win32_handle_ptr(__right);
+	if (*__ztdc_win32_handle_id(__left) == *__ztdc_win32_handle_id(__right)) {
+		return true;
+	}
+	if (*__ztdc_win32_handle_ptr(__left) == *__ztdc_win32_handle_ptr(__right)) {
+		return true;
+	}
+	return CompareObjectHandles(*__ztdc_win32_handle_ptr(__left), *__ztdc_win32_handle_ptr(__right)) == TRUE;
 }
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
@@ -195,20 +205,54 @@ int thrd_sleep(const struct timespec* __duration, struct timespec* __remaining) 
 #endif
 
 typedef struct __ztdc_win32thread_trampoline_t {
+	thrd_t* __thr;
 	thrd_start_t __func;
 	void* __func_arg;
+	const ztdc_thrd_attr_custom_on_new* __custom_on_new_attr;
+	const ztdc_thrd_attr_kind** __sync_kind;
+	atomic_bool* __sync_until;
+	atomic_bool* __sync_still_ok;
+	int* __sync_result;
 } __ztdc_win32thread_trampoline_t;
 
 inline static DWORD __ztdc_win32thread_trampoline(LPVOID __userdata) {
 	ztdc_static_assert(
 	     sizeof(DWORD) >= sizeof(int), "size of `int` is too large for a `DWORD`: trampoline will not work");
-	thrd_start_t __func = NULL;
-	void* __func_arg    = NULL;
+	thrd_t* __thr                                            = NULL;
+	thrd_start_t __func                                      = NULL;
+	void* __func_arg                                         = NULL;
+	const ztdc_thrd_attr_custom_on_new* __custom_on_new_attr = NULL;
+	const ztdc_thrd_attr_kind** __sync_kind                  = NULL;
+	atomic_bool* __sync_until                                = NULL;
+	atomic_bool* __sync_still_ok                             = NULL;
+	int* __sync_result                                       = NULL;
 	{
 		__ztdc_win32thread_trampoline_t* __trampoline_userdata = (__ztdc_win32thread_trampoline_t*)__userdata;
+		__thr                                                  = __trampoline_userdata->__thr;
 		__func                                                 = __trampoline_userdata->__func;
 		__func_arg                                             = __trampoline_userdata->__func_arg;
+		__custom_on_new_attr                                   = __trampoline_userdata->__custom_on_new_attr;
+		__sync_kind                                            = __trampoline_userdata->__sync_kind;
+		__sync_until                                           = __trampoline_userdata->__sync_until;
+		__sync_still_ok                                        = __trampoline_userdata->__sync_still_ok;
+		__sync_result                                          = __trampoline_userdata->__sync_result;
 		free(__trampoline_userdata);
+	}
+	if (__custom_on_new_attr) {
+		int __custom_err = __custom_on_new_attr->func(
+		     *__thr, *__ztdc_win32_handle_ptr(__thr), *__ztdc_win32_handle_id(__thr), __custom_on_new_attr->userdata);
+		if (__custom_err != thrd_success) {
+			*__sync_kind   = &__custom_on_new_attr->kind;
+			*__sync_result = __custom_err;
+			atomic_store(__sync_until, false);
+			while (atomic_load(__sync_still_ok)) {
+				// wait for feedback for this error.
+			}
+			if (*__sync_result != thrd_success) {
+				return 0;
+			}
+		}
+		atomic_store(__sync_until, false);
 	}
 	if (!__func) {
 		return 0;
@@ -222,11 +266,17 @@ ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
 int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_arg, size_t __attrs_size,
      const ztdc_thrd_attr_kind** __attrs, ztdc_thrd_attr_err_func_t* __attr_err_func, void* __attr_err_func_arg) {
-	const thrd_t __original_thr                   = *__thr;
-	const ztdc_thrd_attr_kind* __name_attr_kind   = NULL;
-	const ztdc_thrd_attr_kind* __detach_attr_kind = NULL;
-	bool __name_set                               = false;
-	bool __immediate_detach                       = false;
+	const thrd_t __original_thr                                    = *__thr;
+	const ztdc_thrd_attr_kind* __name_attr_kind                    = NULL;
+	const ztdc_thrd_attr_kind* __detach_attr_kind                  = NULL;
+	const ztdc_thrd_attr_custom_on_origin* __custom_on_origin_attr = NULL;
+	void* __custom_on_origin_attr_kind_arg                         = NULL;
+	bool __name_set                                                = false;
+	bool __immediate_detach                                        = false;
+	const ztdc_thrd_attr_kind* __sync_kind                         = NULL;
+	atomic_bool __sync_until                                       = true;
+	atomic_bool __sync_still_ok                                    = true;
+	int __sync_result                                              = thrd_success;
 	wchar_t __name[1024 * 64]; // max size of Win32 thread name
 	const size_t __max_name_size = sizeof(__name) - 1;
 	ULONG __stack_size           = 1024 * 1000 * 2; // 2 mb default stack
@@ -235,8 +285,14 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 	if (__trampoline_userdata == NULL) {
 		return thrd_nomem;
 	}
-	__trampoline_userdata->__func     = __func;
-	__trampoline_userdata->__func_arg = __func_arg;
+	__trampoline_userdata->__func               = __func;
+	__trampoline_userdata->__custom_on_new_attr = NULL;
+	__trampoline_userdata->__thr                = __thr;
+	__trampoline_userdata->__func_arg           = __func_arg;
+	__trampoline_userdata->__sync_result        = &__sync_result;
+	__trampoline_userdata->__sync_until         = &__sync_until;
+	__trampoline_userdata->__sync_still_ok      = &__sync_still_ok;
+	__trampoline_userdata->__sync_kind          = &__sync_kind;
 
 	for (size_t __attr_index = 0; __attr_index < __attrs_size; ++__attr_index) {
 		const ztdc_thrd_attr_kind* __attr_kind = __attrs[__attr_index];
@@ -435,8 +491,17 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 		case ztdc_thrd_attr_kind_mwcname:
 		case ztdc_thrd_attr_kind_c16name: {
 			// this is just to recognize the attribute: it's handled below later
-
 		} break;
+		case ztdc_thrd_attr_kind_custom_on_origin: {
+			// store to invoke later (on this thread, if success)
+			ztdc_thrd_attr_custom_on_origin* __attr = (ztdc_thrd_attr_custom_on_origin*)__attr_kind;
+			__custom_on_origin_attr                 = __attr;
+		} break;
+		case ztdc_thrd_attr_kind_custom_on_new: {
+			// store to invoke later (on the new thread, if success)
+			ztdc_thrd_attr_custom_on_new* __attr        = (ztdc_thrd_attr_custom_on_new*)__attr_kind;
+			__trampoline_userdata->__custom_on_new_attr = __attr;
+		}
 		default:
 			// unrecognized attribute
 			__attr_err = thrd_error;
@@ -553,6 +618,8 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 	DWORD __thread_started = ResumeThread(*__handle);
 	if (__thread_started == (DWORD)-1) {
 		// well. this is a bit of a problem...
+		__sync_result = thrd_error;
+		atomic_store(&__sync_still_ok, false);
 		CloseHandle(*__handle);
 		free(__trampoline_userdata);
 		*__thr = __original_thr;
@@ -561,6 +628,9 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 	// 1 means it was suspended, then decremented to zero (what we want)
 	// 0 means it was already running (which is... okay?? but also kind of not what we want!!)
 	if (__thread_started == (DWORD)0) {
+		// send back the result to the thread so it knows to either go or quit
+		__sync_result = thrd_error;
+		atomic_store(&__sync_still_ok, false);
 		// if it was already running, than the trampoline userdata might've already been freed?
 		// this really should NEVER ever happen.....
 		CloseHandle(*__handle);
@@ -571,11 +641,50 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 		// somehow, a thread WE created has been hijacked and given a weird, strange value.
 		// It's not running, and we've reached the end of this function. Delete
 		// everything and call it an error.
+		__sync_result = thrd_error;
+		atomic_store(&__sync_still_ok, false);
 		CloseHandle(*__handle);
 		free(__trampoline_userdata);
 		*__thr = __original_thr;
 		return thrd_error;
 	}
+
+	// SYNCHRONIZATION
+	while (atomic_load(&__sync_until)) {
+		// spinlock until the thread is started and all internal work is okay.
+	}
+	// return any from-thread failures and bail if necessary
+	int __post_thread_start_results = __sync_result;
+	if (__post_thread_start_results != thrd_success) {
+		__post_thread_start_results = __attr_err_func(__sync_kind, __post_thread_start_results, __attr_err_func_arg);
+		__sync_result               = __post_thread_start_results;
+		// send back the result to the thread so it knows to either go or quit
+		atomic_store(&__sync_still_ok, false);
+		if (__post_thread_start_results != thrd_success) {
+			CloseHandle(*__handle);
+			*__thr = __original_thr;
+			return __post_thread_start_results;
+		}
+	}
+	// if all goes well, then we check out origin custom error bit
+	// invoke our origin custom thread work if possible
+	if (__custom_on_origin_attr) {
+		int __custom_err = __custom_on_origin_attr->func(*__thr, *__ztdc_win32_handle_ptr(__thr),
+		     *__ztdc_win32_handle_id(__thr), __custom_on_origin_attr->userdata);
+		if (__custom_err != thrd_success) {
+			__custom_err  = __attr_err_func(__sync_kind, __custom_err, __attr_err_func_arg);
+			__sync_result = __post_thread_start_results;
+			// send back the result to the thread so it knows to either go or quit
+			atomic_store(&__sync_still_ok, false);
+			if (__post_thread_start_results != thrd_success) {
+				CloseHandle(*__handle);
+				*__thr = __original_thr;
+				return __post_thread_start_results;
+			}
+		}
+	}
+	// all is done, let the thread go ahead with the correct data.
+	atomic_store(&__sync_still_ok, false);
 	return thrd_success;
 }
 

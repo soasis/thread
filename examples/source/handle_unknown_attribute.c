@@ -35,16 +35,16 @@
 #include <stdio.h>
 #include <limits.h>
 
-inline static int thrd_main(void* arg) {
+inline static int thread_main(void* arg) {
 	int t_id           = *(int*)arg;
 	char name_buf[128] = { 0 };
 	ztdc_thrd_get_c8name(thrd_current(), sizeof(name_buf), (unsigned char*)name_buf);
 	const char* t_name = name_buf;
-	printf("thread id: %d\n thread name: %s\n\n", t_id, t_name);
+	printf("thread id: %d\nthread name: %s\n\n", t_id, t_name);
 	thrd_exit(t_id);
 }
 
-int handle_attribute_errors(const ztdc_thrd_attr_kind* attr_kind, int err, void* userdata) {
+int thread_handle_attribute_errors(const ztdc_thrd_attr_kind* attr_kind, int err, void* userdata) {
 	(void)userdata;
 	// check for the unrecognized attribute that triggers an error
 	ZTD_ASSERT(*attr_kind == (ztdc_thrd_attr_kind)0x12345678);
@@ -81,7 +81,7 @@ int main(void) {
 
 	int t0_id      = 0;
 	int create_err = ztdc_thrd_create_attrs_err(
-	     &t0, thrd_main, &t0_id, ztdc_c_array_size(attrs), attrs, handle_attribute_errors, NULL);
+	     &t0, thread_main, &t0_id, ztdc_c_array_size(attrs), attrs, thread_handle_attribute_errors, NULL);
 	ZTD_ASSERT(create_err == thrd_success);
 
 	int res0 = 0;

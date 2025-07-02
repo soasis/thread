@@ -44,6 +44,26 @@
 #include <pthread_np.h>
 #endif
 
+#if ZTD_IS_ON(ZTD_HEADER_SYS_SYSCALL_H)
+#include <sys/syscall.h>
+#endif
+#if ZTD_IS_ON(ZTD_HEADER_SYS_UIO_H)
+#include <sys/uio.h>
+#endif
+#if ZTD_IS_ON(ZTD_HEADER_SYS_LWP_H)
+#include <sys/lwp.h>
+#endif
+#if ZTD_IS_ON(ZTD_HEADER_SYS_THR_H)
+#include <sys/thr.h>
+#endif
+#if ZTD_IS_ON(ZTD_HEADER_UNISTD_H)
+// make sure to pull this in properly
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
+#include <unistd.h>
+#endif
+
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
 int __ztdc_pthreads_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_arg, size_t __attrs_size,
