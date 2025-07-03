@@ -105,8 +105,23 @@
 				"FETCHCONTENT_SOURCE_DIR_ZTD.CUNEICODE": "${sourceDir}/../cuneicode",
 				"FETCHCONTENT_SOURCE_DIR_ZTD.ENCODING_TABLES": "${sourceDir}/../encoding_tables",
 				"FETCHCONTENT_SOURCE_DIR_ZTD.IDK": "${sourceDir}/../idk",
-				"CMAKE_CXX_STANDARD": "23",
+				"CMAKE_CXX_STANDARD": "20",
 				"CMAKE_C_STANDARD": "23"
+			}
+		},
+		{
+			"name": "local-base-gcc",
+			"description": "Initial values for configuration (GCC for Windows)",
+			"displayName": "Core values for user CMake builds (GCC for Windows)",
+			"hidden": true,
+			"condition": {
+				"type": "equals",
+				"lhs": "${hostSystemName}",
+				"rhs": "Windows"
+			},
+			"cacheVariables": {
+				"CMAKE_CXX_LINK_EXECUTABLE": "lld.exe",
+				"CMAKE_C_LINK_EXECUTABLE": "lld.exe"
 			}
 		},
 		{
@@ -124,6 +139,7 @@
 			"description": "Local default GCC configuration",
 			"inherits": [
 				"local-base",
+				"local-base-gcc",
 				"gcc"
 			]
 		},

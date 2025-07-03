@@ -121,6 +121,7 @@ TEST_CASE("encoded thread name check", "[thrd][thrd_with_create_attrs][encoded-n
 	int res0 = 0;                                                                                                             \
 	thrd_join(t0_arg.thr, &res0);                                                                                             \
 	REQUIRE(res0 == 0xF3);                                                                                                    \
+	REQUIRE(res0 == t0_arg.id);                                                                                               \
 	REQUIRE(t0_arg.name_get_result0 == thrd_success);                                                                         \
 	REQUIRE(t0_arg.expected_name_result0 == 0);                                                                               \
                                                                                                                                \
@@ -129,6 +130,8 @@ TEST_CASE("encoded thread name check", "[thrd][thrd_with_create_attrs][encoded-n
 	REQUIRE(create_err1 == thrd_success);                                                                                     \
 	int res1 = 0;                                                                                                             \
 	thrd_join(t1_arg.thr, &res1);                                                                                             \
+	REQUIRE(res1 == 0xF5)                                                                                                     \
+	REQUIRE(res1 == t1_arg.id);                                                                                               \
 	REQUIRE(t1_arg.name_set_result0 == thrd_success);                                                                         \
 	REQUIRE(t1_arg.name_get_result0 == thrd_success);                                                                         \
 	REQUIRE(t1_arg.expected_name_result0 == 0);                                                                               \
@@ -137,8 +140,7 @@ TEST_CASE("encoded thread name check", "[thrd][thrd_with_create_attrs][encoded-n
 	REQUIRE(t1_arg.expected_name_result1 == 0);                                                                               \
 	REQUIRE(t1_arg.name_set_result2 == thrd_success);                                                                         \
 	REQUIRE(t1_arg.name_get_result2 == thrd_success);                                                                         \
-	REQUIRE(t1_arg.expected_name_result2 == 0);                                                                               \
-	REQUIRE(res1 == 0xF5)
+	REQUIRE(t1_arg.expected_name_result2 == 0);
 
 	SECTION("c8/u8/ascii") {
 		MAKE_TEST_BRACKET(c8, u8"meow?!", ztd_char8_t, c8, u8"meow?!", ztd_char8_t);
