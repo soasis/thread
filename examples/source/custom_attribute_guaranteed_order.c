@@ -65,12 +65,6 @@ inline static int thread_main(void* arg) {
 	return *p_accumulator * 5;
 }
 
-inline static int thread_attr_passthrough(const ztdc_thrd_attr_kind* kind, int err, void* userdata) {
-	(void)kind;
-	(void)userdata;
-	return err;
-}
-
 int main(void) {
 	thrd_t t0 = { 0 };
 
