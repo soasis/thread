@@ -25,6 +25,37 @@
 			}
 		},
 		{
+			"name": "base-gcc-windows",
+			"description": "Initial values for configuration (GCC for Windows)",
+			"displayName": "Core values for user CMake builds (GCC for Windows)",
+			"hidden": true,
+			"condition": {
+				"type": "equals",
+				"lhs": "${hostSystemName}",
+				"rhs": "Windows",
+				"$comment": ""
+			},
+			"cacheVariables": {
+				"CMAKE_CXX_LINK_EXECUTABLE": "lld-link",
+				"CMAKE_C_LINK_EXECUTABLE": "lld-link"
+			}
+		},
+		{
+			"name": "base-gcc-macos",
+			"description": "Initial values for configuration (GCC for MacOS)",
+			"displayName": "Core values for user CMake builds (GCC for MacOS)",
+			"hidden": true,
+			"condition": {
+				"type": "equals",
+				"lhs": "${hostSystemName}",
+				"rhs": "MacOS"
+			},
+			"cacheVariables": {
+				"CMAKE_CXX_LINK_EXECUTABLE": "ld64.lld",
+				"CMAKE_C_LINK_EXECUTABLE": "ld64.lld"
+			}
+		},
+		{
 			"name": "msvc",
 			"description": "MSVC default configuration",
 			"displayName": "MSVC",
@@ -40,7 +71,9 @@
 			"name": "gcc",
 			"description": "GCC default configuration",
 			"displayName": "GCC",
-			"inherits": "base",
+			"inherits": [
+				"base"
+			],
 			"cacheVariables": {
 				"CMAKE_CXX_COMPILER": "g++",
 				"CMAKE_C_COMPILER": "gcc"
@@ -110,21 +143,6 @@
 			}
 		},
 		{
-			"name": "local-base-gcc",
-			"description": "Initial values for configuration (GCC for Windows)",
-			"displayName": "Core values for user CMake builds (GCC for Windows)",
-			"hidden": true,
-			"condition": {
-				"type": "equals",
-				"lhs": "${hostSystemName}",
-				"rhs": "Windows"
-			},
-			"cacheVariables": {
-				"CMAKE_CXX_LINK_EXECUTABLE": "lld.exe",
-				"CMAKE_C_LINK_EXECUTABLE": "lld.exe"
-			}
-		},
-		{
 			"name": "local-clang",
 			"displayName": "Local Clang",
 			"description": "Local default Clang configuration",
@@ -139,7 +157,6 @@
 			"description": "Local default GCC configuration",
 			"inherits": [
 				"local-base",
-				"local-base-gcc",
 				"gcc"
 			]
 		},

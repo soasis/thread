@@ -130,7 +130,7 @@ TEST_CASE("encoded thread name check", "[thrd][thrd_with_create_attrs][encoded-n
 	REQUIRE(create_err1 == thrd_success);                                                                                     \
 	int res1 = 0;                                                                                                             \
 	thrd_join(t1_arg.thr, &res1);                                                                                             \
-	REQUIRE(res1 == 0xF5)                                                                                                     \
+	REQUIRE(res1 == 0xF5);                                                                                                    \
 	REQUIRE(res1 == t1_arg.id);                                                                                               \
 	REQUIRE(t1_arg.name_set_result0 == thrd_success);                                                                         \
 	REQUIRE(t1_arg.name_get_result0 == thrd_success);                                                                         \
