@@ -116,7 +116,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
-ztdc_thrd_native_handle_t ztdc_thrd_current_native_handle() {
+ztdc_thrd_native_handle_t ztdc_thrd_current_native_handle(void) {
 #if ZTD_IS_ON(ZTD_THREAD_PTHREAD_BASED)
 	return (ztdc_thrd_native_handle_t)thrd_current();
 #elif ZTD_IS_ON(ZTD_THREAD_ANY_WIN32_BASED)
@@ -147,7 +147,7 @@ ztdc_thrd_native_handle_t ztdc_thrd_native_handle(thrd_t __thr) {
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
-ztdc_thrd_id_t ztdc_thrd_current_id() {
+ztdc_thrd_id_t ztdc_thrd_current_id(void) {
 	// what the fuck is going on, lol.
 #if ZTD_IS_ON(ZTD_THREAD_ANY_WIN32_BASED)
 	thrd_t __thr = thrd_current();

@@ -109,14 +109,6 @@ const ztdc_thrd_id_t ztdc_thrd_null_id;
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
-/// @brief Returns the native handle out of the current thread.
-///
-/// @return The native "handle" object which represents this thread. May be an invalid sentinel type if it can't fetch
-/// it properly.
-ztdc_thrd_native_handle_t ztdc_thrd_current_native_handle();
-
-ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
-ZTD_USE(ZTD_THREAD_API_LINKAGE)
 /// @brief Returns the native handle out of `__thr`.
 ///
 /// @param[in] __thr The thread to get the native, platform-specific handle for.
@@ -125,6 +117,14 @@ ZTD_USE(ZTD_THREAD_API_LINKAGE)
 /// @return The native "handle" object which represents `__thr`. May be an invalid sentinel type if it can't fetch it
 /// properly.
 ztdc_thrd_native_handle_t ztdc_thrd_native_handle(thrd_t __thr);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief Returns the native handle out of the current thread.
+///
+/// @return The native "handle" object which represents this thread. May be an invalid sentinel type if it can't fetch
+/// it properly.
+ztdc_thrd_native_handle_t ztdc_thrd_current_native_handle(void);
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
@@ -141,6 +141,6 @@ ZTD_USE(ZTD_THREAD_API_LINKAGE)
 /// @brief Returns the native id out of the current thread.
 ///
 /// @return The native "ID" object which represents this thread. May be an invalid sentinel type if this.
-ztdc_thrd_id_t ztdc_thrd_current_id();
+ztdc_thrd_id_t ztdc_thrd_current_id(void);
 
 #endif
