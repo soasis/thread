@@ -112,7 +112,6 @@ ZTD_USE(ZTD_THREAD_API_LINKAGE)
 /// @brief Returns the native handle out of `__thr`.
 ///
 /// @param[in] __thr The thread to get the native, platform-specific handle for.
-/// @param[inout] __p_thrd_handle The native handle object which represents `__thr`.
 ///
 /// @return The native "handle" object which represents `__thr`. May be an invalid sentinel type if it can't fetch it
 /// properly.

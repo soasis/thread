@@ -64,8 +64,10 @@ inline static int thread_custom_name_attr(
 	pthread_setname_np(t_handle, "meow!", NULL);
 #elif ZTD_IS_ON(ZTD_C_STDLIB_BSD) && (ZTD_IS_ON(ZTD_PLATFORM_FREE_BSD) || ZTD_IS_ON(ZTD_PLATFORM_OPEN_BSD))
 	pthread_set_name_np(t_handle, "meow!");
-#elif ZTD_IS_ON(ZTD_PLATFORM_WINDOWS)
+#elif ZTD_IS_ON(ZTD_PLATFORM_WINDOWS) && ZTD_IS_OFF(ZTD_COMPILER_MINGW)
 	SetThreadDescription(t_handle, L"meow!");
+#elif ZTD_IS_ON(ZTD_PLATFORM_WINDOWS) && ZTD_IS_ON(ZTD_COMPILER_MINGW)
+	pthread_setname_np(t_handle, "meow!");
 #endif
 	return thrd_success;
 }
