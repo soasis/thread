@@ -508,7 +508,7 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 			// store to invoke later (on the new thread, if success)
 			ztdc_thrd_attr_custom_on_new* __attr        = (ztdc_thrd_attr_custom_on_new*)__attr_kind;
 			__trampoline_userdata->__custom_on_new_attr = __attr;
-		}
+		} break;
 		default:
 			// unrecognized attribute
 			__attr_err = thrd_error;
@@ -518,7 +518,7 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 			int __attr_err_res = __attr_err_func(__attr_kind, __attr_err, __attr_err_func_arg);
 			if (__attr_err_res != thrd_success) {
 				free(__trampoline_userdata);
-				return thrd_success;
+				return __attr_err_res;
 			}
 		}
 	}
@@ -661,32 +661,34 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 		// spinlock until the thread is started and all internal work is okay.
 	}
 	// return any from-thread failures and bail if necessary
-	int __post_thread_start_results = __sync_result;
-	if (__post_thread_start_results != thrd_success) {
-		__post_thread_start_results = __attr_err_func(__sync_kind, __post_thread_start_results, __attr_err_func_arg);
-		__sync_result               = __post_thread_start_results;
+	int __thread_setup_result = __sync_result;
+	if (__thread_setup_result != thrd_success) {
+		int __processed_thread_setup_result
+		     = __attr_err_func(__sync_kind, __thread_setup_result, __attr_err_func_arg);
+		__sync_result = __processed_thread_setup_result;
 		// send back the result to the thread so it knows to either go or quit
 		atomic_store(&__sync_still_ok, false);
-		if (__post_thread_start_results != thrd_success) {
+		if (__processed_thread_setup_result != thrd_success) {
 			CloseHandle(*__handle);
 			*__thr = __original_thr;
-			return __post_thread_start_results;
+			return __processed_thread_setup_result;
 		}
 	}
 	// if all goes well, then we check out origin custom error bit
 	// invoke our origin custom thread work if possible
 	if (__custom_on_origin_attr) {
-		int __custom_err = __custom_on_origin_attr->func(*__thr, *__ztdc_win32_handle_ptr(__thr),
+		int __custom_origin_err = __custom_on_origin_attr->func(*__thr, *__ztdc_win32_handle_ptr(__thr),
 		     *__ztdc_win32_handle_id(__thr), __custom_on_origin_attr->userdata);
-		if (__custom_err != thrd_success) {
-			__custom_err  = __attr_err_func(__sync_kind, __custom_err, __attr_err_func_arg);
-			__sync_result = __post_thread_start_results;
+		if (__custom_origin_err != thrd_success) {
+			int __processed_custom_origin_err
+			     = __attr_err_func(__sync_kind, __custom_origin_err, __attr_err_func_arg);
+			__sync_result = __processed_custom_origin_err;
 			// send back the result to the thread so it knows to either go or quit
 			atomic_store(&__sync_still_ok, false);
-			if (__post_thread_start_results != thrd_success) {
+			if (__processed_custom_origin_err != thrd_success) {
 				CloseHandle(*__handle);
 				*__thr = __original_thr;
-				return __post_thread_start_results;
+				return __processed_custom_origin_err;
 			}
 		}
 	}

@@ -48,12 +48,13 @@
 
 enum { EXPECTED_MARKER_VALUE = 32 };
 
-inline static int thrd_custom_name(thrd_t t, ztdc_thrd_native_handle_t t_handle, ztdc_thrd_id_t t_id, void* userdata) {
+inline static int thread_custom_name_attr(
+     thrd_t t, ztdc_thrd_native_handle_t t_handle, ztdc_thrd_id_t t_id, void* userdata) {
 	(void)t;
 	(void)t_handle;
 	(void)t_id;
 	int custom_marker = *((const int*)userdata);
-	printf("thrd_custom_name called with custom maker: %d\n", custom_marker);
+	printf("thread_custom_name_attr called with custom marker: %d\n", custom_marker);
 	if (custom_marker != EXPECTED_MARKER_VALUE) {
 		return thrd_error;
 	}
@@ -85,7 +86,7 @@ int main(void) {
 
 	const ztdc_thrd_attr_custom_on_new custom_attr = {
 		.kind     = ztdc_thrd_attr_kind_custom_on_new,
-		.func     = thrd_custom_name,
+		.func     = thread_custom_name_attr,
 		.userdata = &custom_marker,
 	};
 

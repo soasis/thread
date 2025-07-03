@@ -58,7 +58,9 @@ const ztdc_thrd_id_t ztdc_thrd_null_id =
 #endif
      ;
 
-inline static int __ztdc_ignore_all_thrd_errors(const ztdc_thrd_attr_kind* __kind, int __err, void* __userdata) {
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_ignore_all_attr_errors(const ztdc_thrd_attr_kind* __kind, int __err, void* __userdata) {
 	(void)__kind;
 	(void)__err;
 	(void)__userdata;
@@ -67,10 +69,18 @@ inline static int __ztdc_ignore_all_thrd_errors(const ztdc_thrd_attr_kind* __kin
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
+int ztdc_thrd_stop_on_attr_error(const ztdc_thrd_attr_kind* __kind, int __err, void* __userdata) {
+	(void)__kind;
+	(void)__userdata;
+	return __err;
+}
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
 int ztdc_thrd_create_attrs(
      thrd_t* __thr, thrd_start_t __func, void* __func_arg, size_t __attrs_size, const ztdc_thrd_attr_kind** __attrs) {
 	return ztdc_thrd_create_attrs_err(
-	     __thr, __func, __func_arg, __attrs_size, __attrs, __ztdc_ignore_all_thrd_errors, NULL);
+	     __thr, __func, __func_arg, __attrs_size, __attrs, ztdc_thrd_ignore_all_attr_errors, NULL);
 }
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
@@ -90,7 +100,7 @@ int ztdc_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void* __func_
 		return thrd_success;
 	}
 	if (!__attr_err_func) {
-		__attr_err_func = __ztdc_ignore_all_thrd_errors;
+		__attr_err_func = ztdc_thrd_ignore_all_attr_errors;
 	}
 #if ZTD_IS_ON(ZTD_THREAD_PTHREAD_BASED)
 	return __ztdc_pthreads_thrd_create_attrs_err(

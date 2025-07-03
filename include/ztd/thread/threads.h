@@ -141,6 +141,29 @@ typedef int(ztdc_thrd_attr_err_func_t)(const ztdc_thrd_attr_kind* __kind, int __
 
 ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief A ztdc_thrd_attr_err_func_t that returns `thrd_success` unconditionally.
+///
+/// @param[in] __kind The thread attribute kind. Ignored.
+/// @param[in] __err The error that occurred. Ignored.
+/// @param[in] __userdata A pointer to some userdata, or null. Ignored.
+///
+/// @return `thrd_success`.
+int ztdc_thrd_ignore_all_attr_errors(const ztdc_thrd_attr_kind* __kind, int __err, void* __userdata);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
+/// @brief A ztdc_thrd_attr_err_func_t that returns the error it was called with unconditionally. Has the effect of
+/// stopping on the first thread attribute that errors.
+///
+/// @param[in] __kind The thread attribute kind. Ignored.
+/// @param[in] __err The error that occurred.
+/// @param[in] __userdata A pointer to some userdata, or null. Ignored.
+///
+/// @return `__err`.
+int ztdc_thrd_stop_on_attr_error(const ztdc_thrd_attr_kind* __kind, int __err, void* __userdata);
+
+ZTD_USE(ZTD_C_LANGUAGE_LINKAGE)
+ZTD_USE(ZTD_THREAD_API_LINKAGE)
 /// @brief Starts a thread and configures that thread with the given thread attributes, if any. Any failure in the
 /// thread attributes is completely and totally ignored by default. Such errors can be caught by using
 /// ztdc_thrd_create_attrs_err.

@@ -77,7 +77,7 @@ inline static int thread_main(void* arg) {
 	                   // attribute function `thread_custom_on_origin_attr`.
 }
 
-inline static int thread_attr_passthrough(const ztdc_thrd_attr_kind* kind, int err, void* userdata) {
+inline static int thread_attr_check_error(const ztdc_thrd_attr_kind* kind, int err, void* userdata) {
 	(void)kind;
 	(void)userdata;
 
@@ -111,7 +111,7 @@ int main(void) {
 	};
 
 	int create_err0 = ztdc_thrd_create_attrs_err(
-	     &t0, thread_main, NULL, ztdc_c_array_size(attrs), attrs, thread_attr_passthrough, NULL);
+	     &t0, thread_main, NULL, ztdc_c_array_size(attrs), attrs, thread_attr_check_error, NULL);
 	// creation error is always identical to whatever the error function returns, if necessary
 	ZTD_ASSERT(create_err0 == thrd_timedout);
 	ZTD_ASSERT(accumulator == EXPECTED_ACCUMULATION_VALUE);

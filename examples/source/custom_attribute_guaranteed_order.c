@@ -96,7 +96,7 @@ int main(void) {
 	};
 
 	int create_err0 = ztdc_thrd_create_attrs_err(
-	     &t0, thread_main, &accumulator, ztdc_c_array_size(attrs), attrs, thread_attr_passthrough, NULL);
+	     &t0, thread_main, &accumulator, ztdc_c_array_size(attrs), attrs, ztdc_thrd_stop_on_attr_error, NULL);
 	ZTD_ASSERT(create_err0 == thrd_success);
 
 	int res0 = 0;

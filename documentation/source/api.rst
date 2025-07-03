@@ -57,10 +57,14 @@ There's only a limited number of APIs to document, as the rest is covered by the
 
 
 
-``ztdc_thrd_attr_err_func_t`` function type
--------------------------------------------
+``ztdc_thrd_attr_err_func_t`` function type and functions
+---------------------------------------------------------
 
 .. doxygentypedef:: ztdc_thrd_attr_err_func_t
+
+.. doxygenfunction:: ztdc_thrd_ignore_all_attr_errors
+
+.. doxygenfunction:: ztdc_thrd_stop_on_attr_error
 
 
 
