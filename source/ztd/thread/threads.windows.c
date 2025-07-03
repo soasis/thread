@@ -218,6 +218,7 @@ typedef struct __ztdc_win32thread_trampoline_t {
 inline static DWORD __ztdc_win32thread_trampoline(LPVOID __userdata) {
 	ztdc_static_assert(
 	     sizeof(DWORD) >= sizeof(int), "size of `int` is too large for a `DWORD`: trampoline will not work");
+	DWORD __win32_res                                        = 0;
 	thrd_t* __thr                                            = NULL;
 	thrd_start_t __func                                      = NULL;
 	void* __func_arg                                         = NULL;
@@ -249,16 +250,22 @@ inline static DWORD __ztdc_win32thread_trampoline(LPVOID __userdata) {
 				// wait for feedback for this error.
 			}
 			if (*__sync_result != thrd_success) {
-				return 0;
+				return __win32_res;
 			}
 		}
 		atomic_store(__sync_until, false);
 	}
-	if (!__func) {
-		return 0;
+	atomic_store(__sync_until, false);
+	while (atomic_load(__sync_still_ok)) {
+		// wait for feedback for on whether or not a potential custom_on_origin has finished.
 	}
-	DWORD __win32_res = 0;
-	__win32_res       = __func(__func_arg);
+	if (*__sync_result != thrd_success) {
+		return __win32_res;
+	}
+	if (!__func) {
+		return __win32_res;
+	}
+	__win32_res = __func(__func_arg);
 	return __win32_res;
 }
 

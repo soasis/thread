@@ -402,14 +402,14 @@ inline static void* __ztdc_pthread_trampoline(void* __userdata) {
 			// the __name array...
 #if ZTD_IS_ON(ZTD_C_STDLIB_BSD) && ZTD_IS_ON(ZTD_PLATFORM_NET_BSD)
 			__pre_err = __ztdc_pthread_to_thread_error(pthread_setname_np(
-			     __self_thread, __trampoline_userdata->__name, NULL)); // name + void* arg -- huh??
+			     __self_handle, __trampoline_userdata->__name, NULL)); // name + void* arg -- huh??
 #elif ZTD_IS_ON(ZTD_C_STDLIB_BSD) && (ZTD_IS_ON(ZTD_PLATFORM_FREE_BSD) || ZTD_IS_ON(ZTD_PLATFORM_OPEN_BSD))
 			// same as most other *nix but different spelling
-			pthread_set_name_np(__self_thread, __trampoline_userdata->__name);
+			pthread_set_name_np(__self_handle, __trampoline_userdata->__name);
 #else
 			// everyone else is mildly normal about this.
 			__pre_err
-			     = __ztdc_pthread_to_thread_error(pthread_setname_np(__self_thread, __trampoline_userdata->__name));
+			     = __ztdc_pthread_to_thread_error(pthread_setname_np(__self_handle, __trampoline_userdata->__name));
 #endif
 #endif
 		}
