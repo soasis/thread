@@ -83,7 +83,7 @@ typedef
 #if ZTD_IS_ON(ZTD_THREAD_INTEGER_THREAD_ID)
 #if ZTD_IS_ON(ZTD_THREAD_ANY_WIN32_BASED)
      uint32_t
-#else ZTD_IS_ON(ZTD_HEADER_PTHREAD_NP)
+#else
      int32_t
 #endif
 #else

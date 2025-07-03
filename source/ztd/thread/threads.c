@@ -39,12 +39,9 @@
 ZTD_USE(ZTD_THREAD_API_LINKAGE)
 const ztdc_thrd_native_handle_t ztdc_thrd_null_native_handle =
 #if ZTD_IS_ON(ZTD_THREAD_PTHREAD_BASED)
-#if ZTD_IS_OFF(ZTD_HEADER_THREADS_H)
      (ztdc_thrd_native_handle_t)NULL
 #else
-#endif
-#else
-     (ztdc_thrd_native_handle_t)NULL
+     (ztdc_thrd_native_handle_t)INVALID_HANDLE_VALUE
 #endif
      ;
 
@@ -143,6 +140,7 @@ ZTD_USE(ZTD_THREAD_API_LINKAGE)
 ztdc_thrd_id_t ztdc_thrd_current_id() {
 	// what the fuck is going on, lol.
 #if ZTD_IS_ON(ZTD_THREAD_ANY_WIN32_BASED)
+	thrd_t __thr = thrd_current();
 	return *__ztdc_win32_handle_id(&__thr);
 #elif ZTD_IS_ON(ZTD_PLATFORM_DRAGONFLY_BSD)
 	return (ztdc_thrd_id_t)lwp_gettid();
