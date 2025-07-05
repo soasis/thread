@@ -34,6 +34,7 @@ FetchContent_Declare(
 	catch2
 	GIT_REPOSITORY https://github.com/catchorg/Catch2.git
 	GIT_TAG devel
+	GIT_SHALLOW ON
 	EXCLUDE_FROM_ALL
 )
 FetchContent_MakeAvailable(catch2)
