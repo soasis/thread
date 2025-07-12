@@ -44,6 +44,8 @@ There's only a limited number of APIs to document, as the rest is covered by the
 
 .. doxygenfunction:: ztdc_thrd_current_native_handle
 
+.. doxygenvariable:: ztdc_thrd_null_native_handle
+
 
 
 ``ztdc_thrd_id_t`` type and functions
@@ -54,6 +56,8 @@ There's only a limited number of APIs to document, as the rest is covered by the
 .. doxygenfunction:: ztdc_thrd_id
 
 .. doxygenfunction:: ztdc_thrd_current_id
+
+.. doxygenvariable:: ztdc_thrd_null_id
 
 
 
