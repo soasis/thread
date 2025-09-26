@@ -72,45 +72,18 @@ typedef int(ztdc_thrd_attr_func_t)(
 /// for the thread to use.
 typedef enum ztdc_thrd_attr_kind
 #if ZTD_IS_ON(ZTD_CXX) || (ZTD_IS_ON(ZTD_C) && __STDC_VERSION__ >= 202300L)
-: int_least32_t
+     : int_least32_t
 #endif
 {
-	/// @brief A raw, direct name copied unmodified into the thread name descriptor. Corresponds to the structure
-	/// ztdc_thrd_attr_name_sized.
-	ztdc_thrd_attr_kind_name = 0,
-	/// @brief A raw, direct name copied unmodified into the thread name descriptor. Includes the size. Corresponds to
-	/// the structure ztdc_thrd_attr_name_sized.
-	ztdc_thrd_attr_kind_name_sized = 1,
 	/// @brief A name provided in the execution encoding to be transformed and stored as the thread name. Corresponds
 	/// to the structure ztdc_thrd_attr_mcname.
 	ztdc_thrd_attr_kind_mcname = 2,
-	/// @brief A name provided in the execution encoding to be transformed and stored as the thread name. Includes the
-	/// size. Corresponds to the structure ztdc_thrd_attr_mcname_sized.
-	ztdc_thrd_attr_kind_mcname_sized = 3,
 	/// @brief A name provided in the execution encoding to be transformed and stored as the thread name. Corresponds
 	/// to the structure ztdc_thrd_attr_mwcname.
 	ztdc_thrd_attr_kind_mwcname = 4,
-	/// @brief A name provided in the execution encoding to be transformed and stored as the thread name. Includes the
-	/// size. Corresponds to the structure ztdc_thrd_attr_mwcname_sized.
-	ztdc_thrd_attr_kind_mwcname_sized = 5,
 	/// @brief A name provided in the UTF-8 encoding to be transformed and stored as the thread name. Corresponds
 	/// to the structure ztdc_thrd_attr_c8name.
 	ztdc_thrd_attr_kind_c8name = 6,
-	/// @brief A name provided in the UTF-8 encoding to be transformed and stored as the thread name. Includes the
-	/// size. Corresponds to the structure ztdc_thrd_attr_c8name_sized.
-	ztdc_thrd_attr_kind_c8name_sized = 7,
-	/// @brief A name provided in the UTF-16 encoding to be transformed and stored as the thread name. Corresponds
-	/// to the structure ztdc_thrd_attr_c16name.
-	ztdc_thrd_attr_kind_c16name = 8,
-	/// @brief A name provided in the execution encoding to be transformed and stored as the thread name. Includes the
-	/// size. Corresponds to the structure ztdc_thrd_attr_c16name_sized.
-	ztdc_thrd_attr_kind_c16name_sized = 9,
-	/// @brief A name provided in the UTF-32 encoding to be transformed and stored as the thread name. Corresponds to
-	/// the structure ztdc_thrd_attr_c32name.
-	ztdc_thrd_attr_kind_c32name = 10,
-	/// @brief A name provided in the UTF-32 encoding to be transformed and stored as the thread name. Includes the
-	/// size. Corresponds to the structure ztdc_thrd_attr_c32name_sized.
-	ztdc_thrd_attr_kind_c32name_sized = 11,
 	/// @brief The expected stack size for the implementation. Corresponds to the structure ztdc_thrd_attr_stack_size.
 	ztdc_thrd_attr_kind_stack_size = 32,
 	/// @brief Whether or not this thread should be started detached. Corresponds to the structure
@@ -124,6 +97,7 @@ typedef enum ztdc_thrd_attr_kind
 	/// Gives the newly created thread, the native thread handle, and the native thread ID alongside a user data. Is
 	/// invoked after all other thread attributes are applied.
 	ztdc_thrd_attr_kind_custom_on_new = 513,
+
 	/// @brief The last standard-defined attribute that marks the beginning of the implementation-defined attributes.
 	/// Corresponds to nothing and is just for informational purposes.
 	ztdc_thrd_attr_kind_implementation_defined = 0xFFFF,
@@ -133,10 +107,37 @@ typedef enum ztdc_thrd_attr_kind
 	/// @brief A size dictating how big the guard area on one or both sides of the stack might be.
 	/// Implementation-defined and not cross-platform. Corresponds to the structure ztdc_thread_attr__stack_guard_size.
 	ztdc_thrd_attr_kind__stack_guard_size = 0x10021,
+	/// @brief A raw, direct name copied unmodified into the thread name descriptor. Corresponds to the structure
+	/// ztdc_thrd_attr__name_sized.
+	ztdc_thrd_attr_kind_name = 0x10000,
+	/// @brief A raw, direct name copied unmodified into the thread name descriptor. Includes the size. Corresponds to
+	/// the structure ztdc_thrd_attr__name_sized.
+	ztdc_thrd_attr__kind_name_sized = 0x10001,
+	/// @brief A name provided in the execution encoding to be transformed and stored as the thread name. Includes the
+	/// size. Corresponds to the structure ztdc_thrd_attr__mcname_sized.
+	ztdc_thrd_attr__kind_mcname_sized = 0x10003,
+	/// @brief A name provided in the execution encoding to be transformed and stored as the thread name. Includes the
+	/// size. Corresponds to the structure ztdc_thrd_attr__mwcname_sized.
+	ztdc_thrd_attr__kind_mwcname_sized = 0x10005,
+	/// @brief A name provided in the UTF-8 encoding to be transformed and stored as the thread name. Includes the
+	/// size. Corresponds to the structure ztdc_thrd_attr__c8name_sized.
+	ztdc_thrd_attr__kind_c8name_sized = 0x10007,
+	/// @brief A name provided in the UTF-16 encoding to be transformed and stored as the thread name. Corresponds
+	/// to the structure ztdc_thrd_attr__c16name.
+	ztdc_thrd_attr_kind__c16name = 0x10008,
+	/// @brief A name provided in the execution encoding to be transformed and stored as the thread name. Includes the
+	/// size. Corresponds to the structure ztdc_thrd_attr__c16name_sized.
+	ztdc_thrd_attr__kind_c16name_sized = 0x10009,
+	/// @brief A name provided in the UTF-32 encoding to be transformed and stored as the thread name. Corresponds to
+	/// the structure ztdc_thrd_attr__c32name.
+	ztdc_thrd_attr_kind__c32name = 0x1000A,
+	/// @brief A name provided in the UTF-32 encoding to be transformed and stored as the thread name. Includes the
+	/// size. Corresponds to the structure ztdc_thrd_attr__c32name_sized.
+	ztdc_thrd_attr__kind_c32name_sized = 0x1000B,
 } ztdc_thrd_attr_kind;
 
 /// @brief Describes a direct, raw name for the implementation to use without modification.
-typedef struct ztdc_thrd_attr_name {
+typedef struct ztdc_thrd_attr__name {
 	/// @brief The kind of the attribute. Must be ztdc_thrd_attr_kind_name.
 	ztdc_thrd_attr_kind kind;
 	/// @brief A pointer to the data that represents the name. It is null-terminated with an implementation-defined
@@ -146,11 +147,11 @@ typedef struct ztdc_thrd_attr_name {
 	/// @remarks For Windows, this is typically 2 bytes (16 bits). For POSIX-derivative implementations, this is
 	/// usually one byte (8 bits). On some exotic implementations, it can be four bytes (32 bits).
 	const void* name;
-} ztdc_thrd_attr_name;
+} ztdc_thrd_attr__name;
 
 /// @brief Describes a direct, raw name for the implementation to use without modification. Includes the size.
-typedef struct ztdc_thrd_attr_name_sized {
-	/// @brief The kind of the attribute. Must be ztdc_thrd_attr_kind_name_sized.
+typedef struct ztdc_thrd_attr__name_sized {
+	/// @brief The kind of the attribute. Must be ztdc_thrd_attr__kind_name_sized.
 	ztdc_thrd_attr_kind kind;
 	/// @brief The size of the data pointer. For the range denoted by the pointer `name` and this `size` parameter, it
 	/// must not contain one of the implementation-defined null terminators for the data within.
@@ -161,7 +162,7 @@ typedef struct ztdc_thrd_attr_name_sized {
 	/// @remarks For Windows, this is typically 2 bytes (16 bits). For POSIX-derivative implementations, this is
 	/// usually one byte (8 bits). On some exotic implementations, it can be four bytes (32 bits).
 	const void* name;
-} ztdc_thrd_attr_name_sized;
+} ztdc_thrd_attr__name_sized;
 
 /// @brief Describes a name encoded in the execution encoding for the implementation to transcode to the a suitable
 /// internally-named string, if applicable.
@@ -174,14 +175,14 @@ typedef struct ztdc_thrd_attr_mcname {
 
 /// @brief Describes a name encoded in the execution encoding for the implementation to transcode to the a suitable
 /// internally-named string, if applicable. Includes the size.
-typedef struct ztdc_thrd_attr_mcname_sized {
-	/// @brief The kind of the attribute. Must be ztdc_thrd_attr_kind_mcname_sized.
+typedef struct ztdc_thrd_attr__mcname_sized {
+	/// @brief The kind of the attribute. Must be ztdc_thrd_attr__kind_mcname_sized.
 	ztdc_thrd_attr_kind kind;
 	/// @brief The size of the name. Must not include a null terminator in its range.
 	size_t size;
 	/// @brief The execution encoding name.
 	const char* name;
-} ztdc_thrd_attr_mcname_sized;
+} ztdc_thrd_attr__mcname_sized;
 
 /// @brief Describes a name encoded in the wide execution encoding for the implementation to transcode to the a suitable
 /// internally-named string, if applicable.
@@ -194,14 +195,14 @@ typedef struct ztdc_thrd_attr_mwcname {
 
 /// @brief Describes a name encoded in the wide execution encoding for the implementation to transcode to the a suitable
 /// internally-named string, if applicable. Includes the size.
-typedef struct ztdc_thrd_attr_mwcname_sized {
-	/// @brief The kind of the attribute. Must be ztdc_thrd_attr_kind_mwcname_sized.
+typedef struct ztdc_thrd_attr__mwcname_sized {
+	/// @brief The kind of the attribute. Must be ztdc_thrd_attr__kind_mwcname_sized.
 	ztdc_thrd_attr_kind kind;
 	/// @brief The size of the name. Must not include a null terminator in its range.
 	size_t size;
 	/// @brief The wide execution encoding name.
 	const ztd_wchar_t* name;
-} ztdc_thrd_attr_mwcname_sized;
+} ztdc_thrd_attr__mwcname_sized;
 
 /// @brief Describes a name encoded in the UTF-8 encoding for the implementation to transcode to the a suitable
 /// internally-named string, if applicable.
@@ -214,54 +215,54 @@ typedef struct ztdc_thrd_attr_c8name {
 
 /// @brief Describes a name encoded in the UTF-8 encoding for the implementation to transcode to the a suitable
 /// internally-named string, if applicable. Includes the size.
-typedef struct ztdc_thrd_attr_c8name_sized {
-	/// @brief The kind of the attribute. Must be ztdc_thrd_attr_kind_c8name_sized.
+typedef struct ztdc_thrd_attr__c8name_sized {
+	/// @brief The kind of the attribute. Must be ztdc_thrd_attr__kind_c8name_sized.
 	ztdc_thrd_attr_kind kind;
 	/// @brief The size of the name. Must not include a null terminator in its range.
 	size_t size;
 	/// @brief The UTF-8 encoding name.
 	const ztd_char8_t* name;
-} ztdc_thrd_attr_c8name_sized;
+} ztdc_thrd_attr__c8name_sized;
 
 /// @brief Describes a name encoded in the UTF-16 encoding for the implementation to transcode to the a suitable
 /// internally-named string, if applicable.
-typedef struct ztdc_thrd_attr_c16name {
-	/// @brief The kind of the attribute. Must be ztdc_thrd_attr_kind_c16name.
+typedef struct ztdc_thrd_attr__c16name {
+	/// @brief The kind of the attribute. Must be ztdc_thrd_attr_kind__c16name.
 	ztdc_thrd_attr_kind kind;
 	/// @brief The UTF-8 encoding name.
 	const ztd_char16_t* name;
-} ztdc_thrd_attr_c16name;
+} ztdc_thrd_attr__c16name;
 
 /// @brief Describes a name encoded in the UTF-16 encoding for the implementation to transcode to the a suitable
 /// internally-named string, if applicable. Includes the size.
-typedef struct ztdc_thrd_attr_c16name_sized {
-	/// @brief The kind of the attribute. Must be ztdc_thrd_attr_kind_c16name_sized.
+typedef struct ztdc_thrd_attr__c16name_sized {
+	/// @brief The kind of the attribute. Must be ztdc_thrd_attr__kind_c16name_sized.
 	ztdc_thrd_attr_kind kind;
 	/// @brief The size of the name. Must not include a null terminator in its range.
 	size_t size;
 	/// @brief The UTF-8 encoding name.
 	const ztd_char16_t* name;
-} ztdc_thrd_attr_c16name_sized;
+} ztdc_thrd_attr__c16name_sized;
 
 /// @brief Describes a name encoded in the UTF-32 encoding for the implementation to transcode to the a suitable
 /// internally-named string, if applicable.
-typedef struct ztdc_thrd_attr_c32name {
-	/// @brief The kind of the attribute. Must be ztdc_thrd_attr_kind_c32name.
+typedef struct ztdc_thrd_attr__c32name {
+	/// @brief The kind of the attribute. Must be ztdc_thrd_attr_kind__c32name.
 	ztdc_thrd_attr_kind kind;
 	/// @brief The UTF-32 encoding name. Null terminated.
 	const ztd_char32_t* name;
-} ztdc_thrd_attr_c32name;
+} ztdc_thrd_attr__c32name;
 
 /// @brief Describes a name encoded in the UTF-32 encoding for the implementation to transcode to the a suitable
 /// internally-named string, if applicable. Includes the size.
-typedef struct ztdc_thrd_attr_c32name_sized {
-	/// @brief The kind of the attribute. Must be ztdc_thrd_attr_kind_c32name_sized.
+typedef struct ztdc_thrd_attr__c32name_sized {
+	/// @brief The kind of the attribute. Must be ztdc_thrd_attr__kind_c32name_sized.
 	ztdc_thrd_attr_kind kind;
 	/// @brief The size of the name. Must not include a null terminator in its range.
 	size_t size;
 	/// @brief The UTF-32 encoding name.
 	const ztd_char32_t* name;
-} ztdc_thrd_attr_c32name_sized;
+} ztdc_thrd_attr__c32name_sized;
 
 /// @brief Describes a request for a specific stack size.
 typedef struct ztdc_thrd_attr_stack_size {

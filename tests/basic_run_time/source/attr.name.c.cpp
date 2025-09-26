@@ -59,7 +59,7 @@ TEST_CASE("thread raw name check", "[thrd][thrd_with_create_attrs][name]") {
 
 	thrd_t t0 = {};
 
-	ztdc_thrd_attr_name name_attr = {
+	ztdc_thrd_attr__name name_attr = {
 		/* format */
 		ztdc_thrd_attr_kind_name,
 		given,

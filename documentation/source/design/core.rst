@@ -34,7 +34,7 @@ Core Design
 The design of this library is centered around 4 things:
 
 - the :cpp:enum:`ztdc_thrd_attr_kind` enumeration having appropriate values that map to a specific structure;
-- the :cpp:struct:`ztdc_thrd_attr_* <ztdc_thrd_attr_name>` structures (and the :cpp:struct:`ztdc_thrd_attr__* implementation-defined structures <ztdc_thrd_attr__stack_storage>`) for each enumerator in the :cpp:enum:`ztdc_thrd_attr_kind` enumeration;
+- the :cpp:struct:`ztdc_thrd_attr_* <ztdc_thrd_attr__name>` structures (and the :cpp:struct:`ztdc_thrd_attr__* implementation-defined structures <ztdc_thrd_attr__stack_storage>`) for each enumerator in the :cpp:enum:`ztdc_thrd_attr_kind` enumeration;
 - the :cpp:func:`ztdc_thrd_create_attrs` and :cpp:func:`ztdc_thrd_create_attrs_err` functions allowing an implementation to set data before or immediately after thread creation;
 - and, the :cpp:type:`ztdc_thrd_attr_err_func` error function type used in :cpp:func:`ztdc_thrd_create_attrs_err` to allow for checking and either passing over or denying an attribute.
 

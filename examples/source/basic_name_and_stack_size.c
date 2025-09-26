@@ -47,8 +47,8 @@ int main(void) {
 	thrd_t t0 = { 0 };
 	thrd_t t1 = { 0 };
 
-	ztdc_thrd_attr_c32name name_attr = { // format
-		.kind = ztdc_thrd_attr_kind_c32name,
+	ztdc_thrd_attr__c32name name_attr = { // format
+		.kind = ztdc_thrd_attr_kind__c32name,
 		.name = U"meow?!"
 	};
 	ztdc_thrd_attr_stack_size stack_size_attr = {

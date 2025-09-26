@@ -46,7 +46,7 @@ One of the issues with the current design is how type-unsafe it can be. When cre
 
 	int main () {
 		ztdc_thrd_attr_c8name name = {
-			.kind = ztdc_thrd_attr_kind_c32name, // MISTAKE
+			.kind = ztdc_thrd_attr_kind__c32name, // MISTAKE
 			.name = u8"meow"
 		};
 

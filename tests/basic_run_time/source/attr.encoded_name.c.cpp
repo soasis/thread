@@ -53,7 +53,7 @@ typedef struct thread_with_id {
 } thread_with_id;
 
 TEST_CASE("encoded thread name check", "[thrd][thrd_with_create_attrs][encoded-name]") {
-#define MAKE_TEST_BRACKET(given_prefix, given, given_type, expected_prefix, expected, expected_type)                           \
+#define MAKE_TEST_BRACKET(given_prefix, given, given_type, expected_prefix, expected, expected_type, impl_def)                 \
 	using given_char_t    = std::remove_cv_t<std::remove_reference_t<decltype(given[0])>>;                                    \
 	using expected_char_t = std::remove_cv_t<std::remove_reference_t<decltype(expected[0])>>;                                 \
 	static constexpr const given_char_t thread_name[]             = given;                                                    \
@@ -108,9 +108,9 @@ TEST_CASE("encoded thread name check", "[thrd][thrd_with_create_attrs][encoded-n
 	};                                                                                                                        \
                                                                                                                                \
 	thread_with_id t0_arg = { {}, 0xF3, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF };             \
-	ztdc_thrd_attr_##given_prefix##name name_attr = {                                                                         \
+	ztdc_thrd_attr_##impl_def##given_prefix##name name_attr = {                                                               \
 		/* format */                                                                                                         \
-		ztdc_thrd_attr_kind_##given_prefix##name,                                                                            \
+		ztdc_thrd_attr_kind_##impl_def##given_prefix##name,                                                                  \
 		(given_type*)thread_name,                                                                                            \
 	};                                                                                                                        \
 	const ztdc_thrd_attr_kind* attrs[] = {                                                                                    \
@@ -143,118 +143,118 @@ TEST_CASE("encoded thread name check", "[thrd][thrd_with_create_attrs][encoded-n
 	REQUIRE(t1_arg.expected_name_result2 == 0);
 
 	SECTION("c8/u8/ascii") {
-		MAKE_TEST_BRACKET(c8, u8"meow?!", ztd_char8_t, c8, u8"meow?!", ztd_char8_t);
+		MAKE_TEST_BRACKET(c8, u8"meow?!", ztd_char8_t, c8, u8"meow?!", ztd_char8_t, );
 	}
 	SECTION("c16/u/ascii") {
-		MAKE_TEST_BRACKET(c16, u"meow?!", ztd_char16_t, c8, u8"meow?!", ztd_char8_t);
+		MAKE_TEST_BRACKET(c16, u"meow?!", ztd_char16_t, c8, u8"meow?!", ztd_char8_t, _);
 	}
 	SECTION("c32/U/ascii") {
-		MAKE_TEST_BRACKET(c32, U"meow?!", ztd_char32_t, c8, u8"meow?!", ztd_char8_t);
+		MAKE_TEST_BRACKET(c32, U"meow?!", ztd_char32_t, c8, u8"meow?!", ztd_char8_t, _);
 	}
 	SECTION("mc//ascii") {
-		MAKE_TEST_BRACKET(mc, "meow?!", ztd_char_t, c8, u8"meow?!", ztd_char8_t);
+		MAKE_TEST_BRACKET(mc, "meow?!", ztd_char_t, c8, u8"meow?!", ztd_char8_t, );
 	}
 	SECTION("mwc/L/ascii") {
-		MAKE_TEST_BRACKET(mwc, L"meow?!", ztd_wchar_t, c8, u8"meow?!", ztd_char8_t);
+		MAKE_TEST_BRACKET(mwc, L"meow?!", ztd_wchar_t, c8, u8"meow?!", ztd_char8_t, );
 	}
 	SECTION("c8/u8/unicode") {
 		MAKE_TEST_BRACKET(
-		     c8, u8"\u300E\U0001F49Ayay!\u300F", ztd_char8_t, c8, u8"\u300E\U0001F49Ayay!\u300F", ztd_char8_t);
+		     c8, u8"\u300E\U0001F49Ayay!\u300F", ztd_char8_t, c8, u8"\u300E\U0001F49Ayay!\u300F", ztd_char8_t, );
 	}
 	SECTION("c16/u/unicode") {
 		MAKE_TEST_BRACKET(
-		     c16, u"\u300E\U0001F49Ayay!\u300F", ztd_char16_t, c8, u8"\u300E\U0001F49Ayay!\u300F", ztd_char8_t);
+		     c16, u"\u300E\U0001F49Ayay!\u300F", ztd_char16_t, c8, u8"\u300E\U0001F49Ayay!\u300F", ztd_char8_t, _);
 	}
 	SECTION("c32/U/unicode") {
 		MAKE_TEST_BRACKET(
-		     c32, U"\u300E\U0001F49Ayay!\u300F", ztd_char32_t, c8, u8"\u300E\U0001F49Ayay!\u300F", ztd_char8_t);
+		     c32, U"\u300E\U0001F49Ayay!\u300F", ztd_char32_t, c8, u8"\u300E\U0001F49Ayay!\u300F", ztd_char8_t, _);
 	}
 
 	SECTION("c8/u8/ascii") {
-		MAKE_TEST_BRACKET(c8, u8"meow?!", ztd_char8_t, c16, u"meow?!", ztd_char16_t);
+		MAKE_TEST_BRACKET(c8, u8"meow?!", ztd_char8_t, c16, u"meow?!", ztd_char16_t, );
 	}
 	SECTION("c16/u/ascii") {
-		MAKE_TEST_BRACKET(c16, u"meow?!", ztd_char16_t, c16, u"meow?!", ztd_char16_t);
+		MAKE_TEST_BRACKET(c16, u"meow?!", ztd_char16_t, c16, u"meow?!", ztd_char16_t, _);
 	}
 	SECTION("c32/U/ascii") {
-		MAKE_TEST_BRACKET(c32, U"meow?!", ztd_char32_t, c16, u"meow?!", ztd_char16_t);
+		MAKE_TEST_BRACKET(c32, U"meow?!", ztd_char32_t, c16, u"meow?!", ztd_char16_t, _);
 	}
 	SECTION("mc//ascii") {
-		MAKE_TEST_BRACKET(mc, "meow?!", ztd_char_t, c16, u"meow?!", ztd_char16_t);
+		MAKE_TEST_BRACKET(mc, "meow?!", ztd_char_t, c16, u"meow?!", ztd_char16_t, );
 	}
 	SECTION("mwc/L/ascii") {
-		MAKE_TEST_BRACKET(mwc, L"meow?!", ztd_wchar_t, c16, u"meow?!", ztd_char16_t);
+		MAKE_TEST_BRACKET(mwc, L"meow?!", ztd_wchar_t, c16, u"meow?!", ztd_char16_t, );
 	}
 	SECTION("c8/u8/unicode") {
 		MAKE_TEST_BRACKET(
-		     c8, u8"\u300E\U0001F49Ayay!\u300F", ztd_char8_t, c16, u"\u300E\U0001F49Ayay!\u300F", ztd_char16_t);
+		     c8, u8"\u300E\U0001F49Ayay!\u300F", ztd_char8_t, c16, u"\u300E\U0001F49Ayay!\u300F", ztd_char16_t, );
 	}
 	SECTION("c16/u/unicode") {
 		MAKE_TEST_BRACKET(
-		     c16, u"\u300E\U0001F49Ayay!\u300F", ztd_char16_t, c16, u"\u300E\U0001F49Ayay!\u300F", ztd_char16_t);
+		     c16, u"\u300E\U0001F49Ayay!\u300F", ztd_char16_t, c16, u"\u300E\U0001F49Ayay!\u300F", ztd_char16_t, _);
 	}
 	SECTION("c32/U/unicode") {
 		MAKE_TEST_BRACKET(
-		     c32, U"\u300E\U0001F49Ayay!\u300F", ztd_char32_t, c16, u"\u300E\U0001F49Ayay!\u300F", ztd_char16_t);
+		     c32, U"\u300E\U0001F49Ayay!\u300F", ztd_char32_t, c16, u"\u300E\U0001F49Ayay!\u300F", ztd_char16_t, _);
 	}
 
 	SECTION("c8/u8/ascii") {
-		MAKE_TEST_BRACKET(c8, u8"meow?!", ztd_char8_t, c32, U"meow?!", ztd_char32_t);
+		MAKE_TEST_BRACKET(c8, u8"meow?!", ztd_char8_t, c32, U"meow?!", ztd_char32_t, );
 	}
 	SECTION("c16/u/ascii") {
-		MAKE_TEST_BRACKET(c16, u"meow?!", ztd_char16_t, c32, U"meow?!", ztd_char32_t);
+		MAKE_TEST_BRACKET(c16, u"meow?!", ztd_char16_t, c32, U"meow?!", ztd_char32_t, _);
 	}
 	SECTION("c32/U/ascii") {
-		MAKE_TEST_BRACKET(c32, U"meow?!", ztd_char32_t, c32, U"meow?!", ztd_char32_t);
+		MAKE_TEST_BRACKET(c32, U"meow?!", ztd_char32_t, c32, U"meow?!", ztd_char32_t, _);
 	}
 	SECTION("mc//ascii") {
-		MAKE_TEST_BRACKET(mc, "meow?!", ztd_char_t, c32, U"meow?!", ztd_char32_t);
+		MAKE_TEST_BRACKET(mc, "meow?!", ztd_char_t, c32, U"meow?!", ztd_char32_t, );
 	}
 	SECTION("mwc/L/ascii") {
-		MAKE_TEST_BRACKET(mwc, L"meow?!", ztd_wchar_t, c32, U"meow?!", ztd_char32_t);
+		MAKE_TEST_BRACKET(mwc, L"meow?!", ztd_wchar_t, c32, U"meow?!", ztd_char32_t, );
 	}
 	SECTION("c8/u8/unicode") {
 		MAKE_TEST_BRACKET(
-		     c8, u8"\u300E\U0001F49Ayay!\u300F", ztd_char8_t, c32, U"\u300E\U0001F49Ayay!\u300F", ztd_char32_t);
+		     c8, u8"\u300E\U0001F49Ayay!\u300F", ztd_char8_t, c32, U"\u300E\U0001F49Ayay!\u300F", ztd_char32_t, );
 	}
 	SECTION("c16/u/unicode") {
 		MAKE_TEST_BRACKET(
-		     c16, u"\u300E\U0001F49Ayay!\u300F", ztd_char16_t, c32, U"\u300E\U0001F49Ayay!\u300F", ztd_char32_t);
+		     c16, u"\u300E\U0001F49Ayay!\u300F", ztd_char16_t, c32, U"\u300E\U0001F49Ayay!\u300F", ztd_char32_t, _);
 	}
 	SECTION("c32/U/unicode") {
 		MAKE_TEST_BRACKET(
-		     c32, U"\u300E\U0001F49Ayay!\u300F", ztd_char32_t, c32, U"\u300E\U0001F49Ayay!\u300F", ztd_char32_t);
+		     c32, U"\u300E\U0001F49Ayay!\u300F", ztd_char32_t, c32, U"\u300E\U0001F49Ayay!\u300F", ztd_char32_t, _);
 	}
 
 	SECTION("c8/u8/ascii") {
-		MAKE_TEST_BRACKET(c8, u8"meow?!", ztd_char8_t, mc, "meow?!", ztd_char_t);
+		MAKE_TEST_BRACKET(c8, u8"meow?!", ztd_char8_t, mc, "meow?!", ztd_char_t, );
 	}
 	SECTION("c16/u/ascii") {
-		MAKE_TEST_BRACKET(c16, u"meow?!", ztd_char16_t, mc, "meow?!", ztd_char_t);
+		MAKE_TEST_BRACKET(c16, u"meow?!", ztd_char16_t, mc, "meow?!", ztd_char_t, _);
 	}
 	SECTION("c32/U/ascii") {
-		MAKE_TEST_BRACKET(c32, U"meow?!", ztd_char32_t, mc, "meow?!", ztd_char_t);
+		MAKE_TEST_BRACKET(c32, U"meow?!", ztd_char32_t, mc, "meow?!", ztd_char_t, _);
 	}
 	SECTION("mc//ascii") {
-		MAKE_TEST_BRACKET(mc, "meow?!", ztd_char_t, mc, "meow?!", ztd_char_t);
+		MAKE_TEST_BRACKET(mc, "meow?!", ztd_char_t, mc, "meow?!", ztd_char_t, );
 	}
 	SECTION("mwc/L/ascii") {
-		MAKE_TEST_BRACKET(mwc, L"meow?!", ztd_wchar_t, mc, "meow?!", ztd_char_t);
+		MAKE_TEST_BRACKET(mwc, L"meow?!", ztd_wchar_t, mc, "meow?!", ztd_char_t, );
 	}
 
 	SECTION("c8/u8/ascii") {
-		MAKE_TEST_BRACKET(c8, u8"meow?!", ztd_char8_t, mwc, L"meow?!", ztd_wchar_t);
+		MAKE_TEST_BRACKET(c8, u8"meow?!", ztd_char8_t, mwc, L"meow?!", ztd_wchar_t, );
 	}
 	SECTION("c16/u/ascii") {
-		MAKE_TEST_BRACKET(c16, u"meow?!", ztd_char16_t, mwc, L"meow?!", ztd_wchar_t);
+		MAKE_TEST_BRACKET(c16, u"meow?!", ztd_char16_t, mwc, L"meow?!", ztd_wchar_t, _);
 	}
 	SECTION("c32/U/ascii") {
-		MAKE_TEST_BRACKET(c32, U"meow?!", ztd_char32_t, mwc, L"meow?!", ztd_wchar_t);
+		MAKE_TEST_BRACKET(c32, U"meow?!", ztd_char32_t, mwc, L"meow?!", ztd_wchar_t, _);
 	}
 	SECTION("mc//ascii") {
-		MAKE_TEST_BRACKET(mc, "meow?!", ztd_char_t, mwc, L"meow?!", ztd_wchar_t);
+		MAKE_TEST_BRACKET(mc, "meow?!", ztd_char_t, mwc, L"meow?!", ztd_wchar_t, );
 	}
 	SECTION("mwc/L/ascii") {
-		MAKE_TEST_BRACKET(mwc, L"meow?!", ztd_wchar_t, mwc, L"meow?!", ztd_wchar_t);
+		MAKE_TEST_BRACKET(mwc, L"meow?!", ztd_wchar_t, mwc, L"meow?!", ztd_wchar_t, );
 	}
 }

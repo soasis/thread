@@ -308,11 +308,12 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 		}
 		int __attr_err = thrd_success;
 		switch (*__attr_kind) {
-		case ztdc_thrd_attr_kind_name_sized: {
-			ztdc_thrd_attr_name_sized* __attr = (ztdc_thrd_attr_name_sized*)__attr_kind;
+		case ztdc_thrd_attr__kind_name_sized: {
+			ztdc_thrd_attr__name_sized* __attr = (ztdc_thrd_attr__name_sized*)__attr_kind;
 			if (__attr->name) {
-				const size_t __attr_name_size = __attr->size * sizeof(unsigned char);
-				const size_t __copy_size = __attr_name_size > __max_name_size ? __max_name_size : __attr_name_size;
+				const size_t __attr__name_size = __attr->size * sizeof(unsigned char);
+				const size_t __copy_size
+				     = __attr__name_size > __max_name_size ? __max_name_size : __attr__name_size;
 				memcpy(&__name[0], __attr->name, __copy_size);
 				__name[__copy_size] = 0;
 				__name_set          = true;
@@ -322,12 +323,12 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 		case ztdc_thrd_attr_kind_mcname: {
 			ztdc_thrd_attr_mcname* __attr = (ztdc_thrd_attr_mcname*)__attr_kind;
 			if (__attr->name) {
-				const char* __attr_name_ptr = __attr->name;
-				size_t __attr_name_size     = ztdc_c_string_ptr_size(__attr->name);
-				wchar_t* __name_ptr         = __name;
-				size_t __name_size          = __max_name_size;
+				const char* __attr__name_ptr = __attr->name;
+				size_t __attr__name_size     = ztdc_c_string_ptr_size(__attr->name);
+				wchar_t* __name_ptr          = __name;
+				size_t __name_size           = __max_name_size;
 				cnc_mcerr __conv_res
-				     = cnc_mcsntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
+				     = cnc_mcsntomwcsn(&__name_size, &__name_ptr, &__attr__name_size, &__attr__name_ptr);
 				if (__conv_res != cnc_mcerr_ok) {
 					if (__conv_res == cnc_mcerr_invalid_sequence) {
 						__attr_err = thrd_error;
@@ -343,15 +344,15 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 				}
 			}
 		} break;
-		case ztdc_thrd_attr_kind_mcname_sized: {
-			ztdc_thrd_attr_mcname_sized* __attr = (ztdc_thrd_attr_mcname_sized*)__attr_kind;
+		case ztdc_thrd_attr__kind_mcname_sized: {
+			ztdc_thrd_attr__mcname_sized* __attr = (ztdc_thrd_attr__mcname_sized*)__attr_kind;
 			if (__attr->name) {
-				const char* __attr_name_ptr = __attr->name;
-				size_t __attr_name_size     = __attr->size;
-				wchar_t* __name_ptr         = __name;
-				size_t __name_size          = __max_name_size;
+				const char* __attr__name_ptr = __attr->name;
+				size_t __attr__name_size     = __attr->size;
+				wchar_t* __name_ptr          = __name;
+				size_t __name_size           = __max_name_size;
 				cnc_mcerr __conv_res
-				     = cnc_mcsntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
+				     = cnc_mcsntomwcsn(&__name_size, &__name_ptr, &__attr__name_size, &__attr__name_ptr);
 				if (__conv_res != cnc_mcerr_ok) {
 					if (__conv_res == cnc_mcerr_invalid_sequence) {
 						__attr_err = thrd_error;
@@ -367,11 +368,12 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 				}
 			}
 		} break;
-		case ztdc_thrd_attr_kind_mwcname_sized: {
-			ztdc_thrd_attr_mwcname_sized* __attr = (ztdc_thrd_attr_mwcname_sized*)__attr_kind;
+		case ztdc_thrd_attr__kind_mwcname_sized: {
+			ztdc_thrd_attr__mwcname_sized* __attr = (ztdc_thrd_attr__mwcname_sized*)__attr_kind;
 			if (__attr->name) {
-				const size_t __attr_name_size = __attr->size * sizeof(__attr->name[0]);
-				const size_t __copy_size = __attr_name_size > __max_name_size ? __max_name_size : __attr_name_size;
+				const size_t __attr__name_size = __attr->size * sizeof(__attr->name[0]);
+				const size_t __copy_size
+				     = __attr__name_size > __max_name_size ? __max_name_size : __attr__name_size;
 				memcpy(&__name[0], __attr->name, __copy_size);
 				__name[__copy_size] = 0;
 				__name_set          = true;
@@ -381,12 +383,12 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 		case ztdc_thrd_attr_kind_c8name: {
 			ztdc_thrd_attr_c8name* __attr = (ztdc_thrd_attr_c8name*)__attr_kind;
 			if (__attr->name) {
-				const ztd_char8_t* __attr_name_ptr = __attr->name;
-				size_t __attr_name_size            = ztdc_c_string_ptr_size(__attr->name);
-				wchar_t* __name_ptr                = __name;
-				size_t __name_size                 = __max_name_size;
+				const ztd_char8_t* __attr__name_ptr = __attr->name;
+				size_t __attr__name_size            = ztdc_c_string_ptr_size(__attr->name);
+				wchar_t* __name_ptr                 = __name;
+				size_t __name_size                  = __max_name_size;
 				cnc_mcerr __conv_res
-				     = cnc_c8sntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
+				     = cnc_c8sntomwcsn(&__name_size, &__name_ptr, &__attr__name_size, &__attr__name_ptr);
 				if (__conv_res != cnc_mcerr_ok) {
 					if (__conv_res == cnc_mcerr_invalid_sequence) {
 						__attr_err = thrd_error;
@@ -402,15 +404,15 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 				}
 			}
 		} break;
-		case ztdc_thrd_attr_kind_c8name_sized: {
-			ztdc_thrd_attr_c8name_sized* __attr = (ztdc_thrd_attr_c8name_sized*)__attr_kind;
+		case ztdc_thrd_attr__kind_c8name_sized: {
+			ztdc_thrd_attr__c8name_sized* __attr = (ztdc_thrd_attr__c8name_sized*)__attr_kind;
 			if (__attr->name) {
-				const ztd_char8_t* __attr_name_ptr = __attr->name;
-				size_t __attr_name_size            = __attr->size;
-				wchar_t* __name_ptr                = __name;
-				size_t __name_size                 = __max_name_size;
+				const ztd_char8_t* __attr__name_ptr = __attr->name;
+				size_t __attr__name_size            = __attr->size;
+				wchar_t* __name_ptr                 = __name;
+				size_t __name_size                  = __max_name_size;
 				cnc_mcerr __conv_res
-				     = cnc_c8sntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
+				     = cnc_c8sntomwcsn(&__name_size, &__name_ptr, &__attr__name_size, &__attr__name_ptr);
 				if (__conv_res != cnc_mcerr_ok) {
 					if (__conv_res == cnc_mcerr_invalid_sequence) {
 						__attr_err = thrd_error;
@@ -426,26 +428,27 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 				}
 			}
 		} break;
-		case ztdc_thrd_attr_kind_c16name_sized: {
-			ztdc_thrd_attr_c16name_sized* __attr = (ztdc_thrd_attr_c16name_sized*)__attr_kind;
+		case ztdc_thrd_attr__kind_c16name_sized: {
+			ztdc_thrd_attr__c16name_sized* __attr = (ztdc_thrd_attr__c16name_sized*)__attr_kind;
 			if (__attr->name) {
-				const size_t __attr_name_size = __attr->size * sizeof(__attr->name[0]);
-				const size_t __copy_size = __attr_name_size > __max_name_size ? __max_name_size : __attr_name_size;
+				const size_t __attr__name_size = __attr->size * sizeof(__attr->name[0]);
+				const size_t __copy_size
+				     = __attr__name_size > __max_name_size ? __max_name_size : __attr__name_size;
 				memcpy(&__name[0], __attr->name, __copy_size);
 				__name[__copy_size] = 0;
 				__name_set          = true;
 				__name_attr_kind    = __attr_kind;
 			}
 		} break;
-		case ztdc_thrd_attr_kind_c32name: {
-			ztdc_thrd_attr_c32name* __attr = (ztdc_thrd_attr_c32name*)__attr_kind;
+		case ztdc_thrd_attr_kind__c32name: {
+			ztdc_thrd_attr__c32name* __attr = (ztdc_thrd_attr__c32name*)__attr_kind;
 			if (__attr->name) {
-				const ztd_char32_t* __attr_name_ptr = __attr->name;
-				size_t __attr_name_size             = ztdc_c_string_ptr_size(__attr->name);
-				wchar_t* __name_ptr                 = __name;
-				size_t __name_size                  = __max_name_size;
+				const ztd_char32_t* __attr__name_ptr = __attr->name;
+				size_t __attr__name_size             = ztdc_c_string_ptr_size(__attr->name);
+				wchar_t* __name_ptr                  = __name;
+				size_t __name_size                   = __max_name_size;
 				cnc_mcerr __conv_res
-				     = cnc_c32sntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
+				     = cnc_c32sntomwcsn(&__name_size, &__name_ptr, &__attr__name_size, &__attr__name_ptr);
 				if (__conv_res != cnc_mcerr_ok) {
 					if (__conv_res == cnc_mcerr_invalid_sequence) {
 						__attr_err = thrd_error;
@@ -461,15 +464,15 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 				}
 			}
 		} break;
-		case ztdc_thrd_attr_kind_c32name_sized: {
-			ztdc_thrd_attr_c32name_sized* __attr = (ztdc_thrd_attr_c32name_sized*)__attr_kind;
+		case ztdc_thrd_attr__kind_c32name_sized: {
+			ztdc_thrd_attr__c32name_sized* __attr = (ztdc_thrd_attr__c32name_sized*)__attr_kind;
 			if (__attr->name) {
-				const ztd_char32_t* __attr_name_ptr = __attr->name;
-				size_t __attr_name_size             = __attr->size;
-				wchar_t* __name_ptr                 = __name;
-				size_t __name_size                  = __max_name_size;
+				const ztd_char32_t* __attr__name_ptr = __attr->name;
+				size_t __attr__name_size             = __attr->size;
+				wchar_t* __name_ptr                  = __name;
+				size_t __name_size                   = __max_name_size;
 				cnc_mcerr __conv_res
-				     = cnc_c32sntomwcsn(&__name_size, &__name_ptr, &__attr_name_size, &__attr_name_ptr);
+				     = cnc_c32sntomwcsn(&__name_size, &__name_ptr, &__attr__name_size, &__attr__name_ptr);
 				if (__conv_res != cnc_mcerr_ok) {
 					if (__conv_res == cnc_mcerr_invalid_sequence) {
 						__attr_err = thrd_error;
@@ -496,7 +499,7 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 		} break;
 		case ztdc_thrd_attr_kind_name:
 		case ztdc_thrd_attr_kind_mwcname:
-		case ztdc_thrd_attr_kind_c16name: {
+		case ztdc_thrd_attr_kind__c16name: {
 			// this is just to recognize the attribute: it's handled below later
 		} break;
 		case ztdc_thrd_attr_kind_custom_on_origin: {
@@ -541,7 +544,7 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 		int __attr_err                         = thrd_success;
 		switch (*__attr_kind) {
 		case ztdc_thrd_attr_kind_name: {
-			ztdc_thrd_attr_name* __attr = (ztdc_thrd_attr_name*)__attr_kind;
+			ztdc_thrd_attr__name* __attr = (ztdc_thrd_attr__name*)__attr_kind;
 			if (__attr->name) {
 				HRESULT __name_res = SetThreadDescription(*__handle, (PCWSTR)__attr->name);
 				if (FAILED(__name_res)) {
@@ -564,8 +567,8 @@ int __ztdc_win32_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, void*
 				}
 			}
 		} break;
-		case ztdc_thrd_attr_kind_c16name: {
-			ztdc_thrd_attr_c16name* __attr = (ztdc_thrd_attr_c16name*)__attr_kind;
+		case ztdc_thrd_attr_kind__c16name: {
+			ztdc_thrd_attr__c16name* __attr = (ztdc_thrd_attr__c16name*)__attr_kind;
 			if (__attr->name) {
 				HRESULT __name_res = SetThreadDescription(*__handle, (PCWSTR)__attr->name);
 				if (FAILED(__name_res)) {

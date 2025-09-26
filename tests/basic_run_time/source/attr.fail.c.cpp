@@ -75,8 +75,8 @@ TEST_CASE("thread test with attribute failure", "[thrd][thrd_with_create_attrs_e
 	thrd_t t0 = {};
 	thrd_t t1 = {};
 
-	ztdc_thrd_attr_c16name name_attr = { // format
-		ztdc_thrd_attr_kind_c16name, u"meow?!"
+	ztdc_thrd_attr__c16name name_attr = { // format
+		ztdc_thrd_attr_kind__c16name, u"meow?!"
 	};
 	ztdc_thrd_attr_stack_size stack_size_attr = {
 		ztdc_thrd_attr_kind_stack_size,

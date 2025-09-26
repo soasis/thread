@@ -502,7 +502,7 @@ int __ztdc_pthreads_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, vo
 		int __attr_err = thrd_success;
 		switch (*__attr_kind) {
 		case ztdc_thrd_attr_kind_name: {
-			ztdc_thrd_attr_name* __attr = (ztdc_thrd_attr_name*)__attr_kind;
+			ztdc_thrd_attr__name* __attr = (ztdc_thrd_attr__name*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = ztdc_c_string_ptr_size((const char*)__attr->name);
 				__attr_err  = __ztdc_pthread_prepare_name_trampoline(&__impl_attrs, __trampoline_userdata,
@@ -510,8 +510,8 @@ int __ztdc_pthreads_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, vo
 				__sync_kind = __attr_kind;
 			}
 		} break;
-		case ztdc_thrd_attr_kind_name_sized: {
-			ztdc_thrd_attr_name_sized* __attr = (ztdc_thrd_attr_name_sized*)__attr_kind;
+		case ztdc_thrd_attr__kind_name_sized: {
+			ztdc_thrd_attr__name_sized* __attr = (ztdc_thrd_attr__name_sized*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = __attr->size;
 				__attr_err  = __ztdc_pthread_prepare_name_trampoline(&__impl_attrs, __trampoline_userdata,
@@ -528,8 +528,8 @@ int __ztdc_pthreads_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, vo
 				__sync_kind = __attr_kind;
 			}
 		} break;
-		case ztdc_thrd_attr_kind_mcname_sized: {
-			ztdc_thrd_attr_mcname_sized* __attr = (ztdc_thrd_attr_mcname_sized*)__attr_kind;
+		case ztdc_thrd_attr__kind_mcname_sized: {
+			ztdc_thrd_attr__mcname_sized* __attr = (ztdc_thrd_attr__mcname_sized*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = __attr->size;
 				__attr_err               = __ztdc_pthread_prepare_name_trampoline(
@@ -546,8 +546,8 @@ int __ztdc_pthreads_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, vo
 				__sync_kind = __attr_kind;
 			}
 		} break;
-		case ztdc_thrd_attr_kind_mwcname_sized: {
-			ztdc_thrd_attr_mwcname_sized* __attr = (ztdc_thrd_attr_mwcname_sized*)__attr_kind;
+		case ztdc_thrd_attr__kind_mwcname_sized: {
+			ztdc_thrd_attr__mwcname_sized* __attr = (ztdc_thrd_attr__mwcname_sized*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = __attr->size;
 				__attr_err               = __ztdc_pthread_prepare_name_trampoline(
@@ -564,8 +564,8 @@ int __ztdc_pthreads_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, vo
 				__sync_kind = __attr_kind;
 			}
 		} break;
-		case ztdc_thrd_attr_kind_c8name_sized: {
-			ztdc_thrd_attr_c8name_sized* __attr = (ztdc_thrd_attr_c8name_sized*)__attr_kind;
+		case ztdc_thrd_attr__kind_c8name_sized: {
+			ztdc_thrd_attr__c8name_sized* __attr = (ztdc_thrd_attr__c8name_sized*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = __attr->size;
 				__attr_err               = __ztdc_pthread_prepare_name_trampoline(
@@ -573,8 +573,8 @@ int __ztdc_pthreads_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, vo
 				__sync_kind = __attr_kind;
 			}
 		} break;
-		case ztdc_thrd_attr_kind_c16name: {
-			ztdc_thrd_attr_c16name* __attr = (ztdc_thrd_attr_c16name*)__attr_kind;
+		case ztdc_thrd_attr_kind__c16name: {
+			ztdc_thrd_attr__c16name* __attr = (ztdc_thrd_attr__c16name*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = ztdc_c_string_ptr_size(__attr->name);
 				__attr_err               = __ztdc_pthread_prepare_name_trampoline(
@@ -582,8 +582,8 @@ int __ztdc_pthreads_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, vo
 				__sync_kind = __attr_kind;
 			}
 		} break;
-		case ztdc_thrd_attr_kind_c16name_sized: {
-			ztdc_thrd_attr_c16name_sized* __attr = (ztdc_thrd_attr_c16name_sized*)__attr_kind;
+		case ztdc_thrd_attr__kind_c16name_sized: {
+			ztdc_thrd_attr__c16name_sized* __attr = (ztdc_thrd_attr__c16name_sized*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = __attr->size;
 				__attr_err               = __ztdc_pthread_prepare_name_trampoline(
@@ -591,8 +591,8 @@ int __ztdc_pthreads_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, vo
 				__sync_kind = __attr_kind;
 			}
 		} break;
-		case ztdc_thrd_attr_kind_c32name: {
-			ztdc_thrd_attr_c32name* __attr = (ztdc_thrd_attr_c32name*)__attr_kind;
+		case ztdc_thrd_attr_kind__c32name: {
+			ztdc_thrd_attr__c32name* __attr = (ztdc_thrd_attr__c32name*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = ztdc_c_string_ptr_size(__attr->name);
 				__attr_err               = __ztdc_pthread_prepare_name_trampoline(
@@ -600,8 +600,8 @@ int __ztdc_pthreads_thrd_create_attrs_err(thrd_t* __thr, thrd_start_t __func, vo
 				__sync_kind = __attr_kind;
 			}
 		} break;
-		case ztdc_thrd_attr_kind_c32name_sized: {
-			ztdc_thrd_attr_c32name_sized* __attr = (ztdc_thrd_attr_c32name_sized*)__attr_kind;
+		case ztdc_thrd_attr__kind_c32name_sized: {
+			ztdc_thrd_attr__c32name_sized* __attr = (ztdc_thrd_attr__c32name_sized*)__attr_kind;
 			if (__attr->name) {
 				const size_t __name_size = __attr->size;
 				__attr_err               = __ztdc_pthread_prepare_name_trampoline(

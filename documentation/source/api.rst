@@ -105,40 +105,13 @@ These are standard structures, useful to dictate behavior across platforms. Cert
 	
 	All attributes are processed on the thread that invoked one of the attribute-handling thread creation functions, except for :cpp:struct:`ztdc_thrd_attr_custom_on_new`, which is invoked on the new thread. :cpp:struct:`ztdc_thrd_attr_custom_on_new` and :cpp:struct:`ztdc_thrd_attr_custom_on_origin` are always invoked after all other attributes have been processed in `attrs` (and no errors have occurred). :cpp:struct:`ztdc_thrd_attr_custom_on_new` is processed before :cpp:struct:`ztdc_thrd_attr_custom_on_origin`, and none of their functions are ever invoked in parallel. The processing of all attributes synchronizes before the start of the actual passed-in thread function.
 
-.. doxygenstruct:: ztdc_thrd_attr_name
-	:members:
-
-.. doxygenstruct:: ztdc_thrd_attr_name_sized
-	:members:
-
 .. doxygenstruct:: ztdc_thrd_attr_mcname
-	:members:
-
-.. doxygenstruct:: ztdc_thrd_attr_mcname_sized
 	:members:
 
 .. doxygenstruct:: ztdc_thrd_attr_mwcname
 	:members:
 
-.. doxygenstruct:: ztdc_thrd_attr_mwcname_sized
-	:members:
-
 .. doxygenstruct:: ztdc_thrd_attr_c8name
-	:members:
-
-.. doxygenstruct:: ztdc_thrd_attr_c8name_sized
-	:members:
-
-.. doxygenstruct:: ztdc_thrd_attr_c16name
-	:members:
-
-.. doxygenstruct:: ztdc_thrd_attr_c16name_sized
-	:members:
-
-.. doxygenstruct:: ztdc_thrd_attr_c32name
-	:members:
-
-.. doxygenstruct:: ztdc_thrd_attr_c32name_sized
 	:members:
 
 .. doxygenstruct:: ztdc_thrd_attr_stack_size
@@ -166,6 +139,33 @@ These structures are less portable and do not work across platforms.
 	:members:
 
 .. doxygenstruct:: ztdc_thrd_attr__stack_guard_size
+	:members:
+
+.. doxygenstruct:: ztdc_thrd_attr__mcname_sized
+	:members:
+
+.. doxygenstruct:: ztdc_thrd_attr__mwcname_sized
+	:members:
+
+.. doxygenstruct:: ztdc_thrd_attr__c8name_sized
+	:members:
+
+.. doxygenstruct:: ztdc_thrd_attr__c16name
+	:members:
+
+.. doxygenstruct:: ztdc_thrd_attr__c16name_sized
+	:members:
+
+.. doxygenstruct:: ztdc_thrd_attr__c32name
+	:members:
+
+.. doxygenstruct:: ztdc_thrd_attr__c32name_sized
+	:members:
+
+.. doxygenstruct:: ztdc_thrd_attr__name
+	:members:
+
+.. doxygenstruct:: ztdc_thrd_attr__name_sized
 	:members:
 
 
