@@ -12,6 +12,8 @@ jobs:
     name: "${{matrix.os}} ${{matrix.compiler}} c${{matrix.c_standard}} c++${{matrix.cxx_standard}}"
     strategy:
       matrix:
+        experimental:
+          - false
         os:
           - ubuntu
           - windows
@@ -42,7 +44,12 @@ jobs:
             image_version: 2025
           - os: windows
             image_version: latest
+        include:
+          - os: windows
+            compiler: gcc
+            experimental: true
     runs-on: ${{matrix.os}}-${{matrix.image_version}}
+    continue-on-error: ${{matrix.experimental}}
     env:
       CMAKE_CXX_STANDARD: ${{matrix.cxx_standard}}
       CMAKE_C_STANDARD: ${{matrix.c_standard}}
